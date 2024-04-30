@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify
-from .utils import get_access_token, get_user_data_from_github, create_user_and_insert_token, update_token
+from flask import Blueprint, request, jsonify, make_response
+from .utils import get_access_token_from_github, get_user_data_from_github, create_user_and_insert_token, update_access_token
 from ..models import User
 
 user_blueprint = Blueprint('user', __name__)
@@ -13,7 +13,7 @@ def github_login():
         return jsonify({'error': 'Authorization code is required'}), 400
 
     # auth_code를 이용해 액세스 토큰을 받아옴
-    response_json = get_access_token(auth_code)
+    response_json = get_access_token_from_github(auth_code)
 
     if 'access_token' in response_json:
         access_token = response_json['access_token']
@@ -28,13 +28,19 @@ def github_login():
         if user is None:
             user = create_user_and_insert_token(login, nickname, avatar_url, access_token)
         else:
-            update_token(user.id, access_token)
+            update_access_token(user.id, access_token)
 
-        return jsonify({'access_token': access_token,
+        response_data = jsonify({'access_token': access_token,
                         'login': login,
                         'nickname': nickname,
                         'avatar_url': avatar_url,
                         'id': user.id})
+
+        # 응답 객체 생성 및 헤더 설정
+        response = make_response(response_data)
+        response.headers['Authorization'] = f'Bearer {access_token}'
+
+        return response
     else:
         error_message = response_json.get('error_description', 'Unknown error occurred.')
         return jsonify({'error': response_json.get('error', 'error'), 'error_description': error_message}), 400

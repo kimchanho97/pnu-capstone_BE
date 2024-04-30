@@ -5,7 +5,7 @@ from .. import db
 from ..models import User, Token
 
 
-def get_access_token(auth_code):
+def get_access_token_from_github(auth_code):
     # GitHub 앱의 클라이언트 ID와 클라이언트 시크릿 설정
     client_id = os.getenv("GITHUB_CLIENT_ID")
     client_secret = os.getenv("GITHUB_CLIENT_SECRET")
@@ -56,7 +56,7 @@ def create_user_and_insert_token(login, nickname, avatar_url, access_token):
     return new_user
 
 
-def update_token(user_id, access_token):
+def update_access_token(user_id, access_token):
     # 1. DB에 Token 정보 update
     token = Token.query.filter_by(user_id=user_id).first()
     token.access_token = access_token
