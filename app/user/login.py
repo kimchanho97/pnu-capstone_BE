@@ -30,7 +30,7 @@ def github_login():
         else:
             update_access_token(user.id, access_token)
 
-        response_data = jsonify({'access_token': access_token,
+        response_data = jsonify({
                         'login': login,
                         'nickname': nickname,
                         'avatar_url': avatar_url,
