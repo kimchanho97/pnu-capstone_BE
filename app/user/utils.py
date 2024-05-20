@@ -44,21 +44,34 @@ def getUserDataFromGithub(accessToken):
 
 
 def createUserAndInsertToken(login, nickname, avatarUrl, accessToken):
-    # 1. DB에 User 정보 insert
-    newUser = User(login=login, nickname=nickname, avatar_url=avatarUrl)
-    db.session.add(newUser)
-    db.session.commit()
+    try:
+        # 1. DB에 User 정보 insert
+        newUser = User(login=login, nickname=nickname, avatar_url=avatarUrl)
+        db.session.add(newUser)
+        db.session.flush()
 
-    # 2. DB에 Token 정보 insert
-    newToken = Token(user_id=newUser.id, access_token=accessToken)
-    db.session.add(newToken)
-    db.session.commit()
+        # 2. DB에 Token 정보 insert
+        newToken = Token(user_id=newUser.id, access_token=accessToken)
+        db.session.add(newToken)
+
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
+
     return newUser
 
 
 def updateAccessToken(userId, accessToken):
-    # 1. DB에 Token 정보 update
-    token = Token.query.filter_by(user_id=userId).first()
-    token.access_token = accessToken
-    db.session.commit()
+    try:
+        # 1. DB에 Token 정보 update
+        token = Token.query.filter_by(user_id=userId).first()
+        if token:
+            token.access_token = accessToken
+            db.session.commit()
+        else:
+            raise ValueError("Token not found for user_id: {}".format(userId))
+    except Exception as e:
+        db.session.rollback()
+        raise e
     return
