@@ -24,7 +24,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # 블루프린트와 서비스 로직 동적 로딩
-    from .user.login import user_blueprint
-    app.register_blueprint(user_blueprint, url_prefix='/user')
+    from .user.login import userBlueprint
+    app.register_blueprint(userBlueprint, url_prefix='/user')
 
     return app
