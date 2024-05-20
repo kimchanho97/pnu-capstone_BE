@@ -30,7 +30,7 @@ class Project(db.Model):
     framework = db.Column(db.String(255), nullable=False)
     port = db.Column(db.Integer, nullable=True)
     status = db.Column(db.Integer, nullable=False, default=0)
-    autoscaling = db.Column(db.Boolean, nullable=False, default=False)
+    auto_scaling = db.Column(db.Boolean, nullable=False, default=False)
     min_replicas = db.Column(db.Integer, nullable=True)
     max_replicas = db.Column(db.Integer, nullable=True)
     cpu_threshold = db.Column(db.Integer, nullable=True)
