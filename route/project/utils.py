@@ -1,8 +1,50 @@
 from .. import db
-from ..models import Project, Secret, Token
+from ..models import Project, Secret, Token, User, Build
+import requests
 
 class AuthorizationError(Exception):
     pass
+
+def createBuildAndSave(projectId, commitMsg, imageName, imageTag):
+    # 빌드 정보를 저장
+    newBuild = Build(
+        project_id=projectId,
+        commit_msg=commitMsg,
+        image_name=imageName,
+        image_tag=imageTag
+    )
+    db.session.add(newBuild)
+    db.session.commit()
+    return
+
+def getCurrentCommitMessage(projectName, userId, token):
+    user = User.query.filter_by(id=userId).first()
+    login = user.login
+    # 프로젝트 이름과 유저 이름을 이용해 커밋 메시지를 가져와 반환
+    repoUrl = f'https://api.github.com/repos/{login}/{projectName}/commits?per_page=1'
+
+    # 헤더에 토큰을 추가
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/vnd.github.v3+json',
+    }
+
+    response = requests.get(repoUrl, headers=headers)
+    if response.status_code != 200:
+        raise Exception('Failed to fetch commit message')
+
+    commitMsg = response.json()[0]['commit']['message']
+    sha = response.json()[0]['sha']
+    return commitMsg, sha
+
+def deleteProjectById(projectId):
+    # 프로젝트 아이디를 이용해 프로젝트를 삭제
+    project = Project.query.filter_by(id=projectId).first()
+    if project is None:
+        raise Exception('Project not found')
+    db.session.delete(project)
+    db.session.commit()
+    return
 
 def fetchProjects(userId):
     # 유저 아이디를 이용해 프로젝트 리스트를 가져와 반환
