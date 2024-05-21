@@ -37,9 +37,9 @@ class Project(db.Model):
     domain_url = db.Column(db.String(255), nullable=True)
     webhook_url = db.Column(db.String(255), nullable=True)
 
-    builds = db.relationship('Build', backref='Project', lazy=True)
-    deployments = db.relationship('Deployment', backref='Project', lazy=True)
-    secrets = db.relationship('Secret', backref='Project', lazy=True)
+    builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan')
+    deployments = db.relationship('Deployment', backref='Project', lazy=True, cascade='all, delete-orphan')
+    secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Project {self.name}>'
