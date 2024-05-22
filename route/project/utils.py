@@ -1,9 +1,51 @@
 from .. import db
-from ..models import Project, Secret, Token, User, Build
+from ..models import Project, Secret, Token, User, Build, Deploy
 import requests
+from sqlalchemy.exc import SQLAlchemyError
+from .error import AuthorizationError
 
-class AuthorizationError(Exception):
-    pass
+def getProjectDetailById(projectId):
+    try:
+        # 프로젝트 아이디를 이용해 프로젝트 정보를 가져와 반환
+        data = {'builds': [], 'deploys': [], 'secrets': [], 'domainUrl': '', 'webhookUrl': ''}
+        project = Project.query.filter_by(id=projectId).first()
+        if project is None:
+            raise Exception('Project not found')
+
+        builds = Build.query.filter_by(project_id=projectId).all()
+        for build in builds:
+            data['builds'].append({
+                'id': build.id,
+                'buildDate': build.build_date,
+                'commitMsg': build.commit_msg,
+                'imageTag': build.image_tag
+            })
+
+        deploys = Deploy.query.filter_by(project_id=projectId).all()
+        for deploy in deploys:
+            data['deploys'].append({
+                'id': deploy.id,
+                'deployDate': deploy.deploy_date,
+            })
+            build = Build.query.filter_by(id=deploy.build_id).first()
+            data['deploys'][-1]['commitMsg'] = build.commit_msg
+            data['deploys'][-1]['imageTag'] = build.image_tag
+
+        data['domainUrl'] = project.domain_url
+        data['webhookUrl'] = project.webhook_url
+
+        secrets = Secret.query.filter_by(project_id=projectId).all()
+        for secret in secrets:
+            data['secrets'].append({
+                'key': secret.key,
+                'value': secret.value
+            })
+
+        return data
+    except SQLAlchemyError as e:
+        print(f"Database Error: {e}")
+        raise Exception('An error occurred while fetching project detail')
+
 
 def createBuildAndSave(projectId, commitMsg, imageName, imageTag):
     # 빌드 정보를 저장
@@ -60,14 +102,18 @@ def fetchProjects(userId):
     return projectList
 
 def getUserIdFromToken(token):
-    # 토큰을 이용해 유저 아이디를 찾아 반환
-    if token is None:
-        raise AuthorizationError('Authorization header is required')
+    try:
+        # 토큰을 이용해 유저 아이디를 찾아 반환
+        if token is None:
+            raise AuthorizationError('Authorization header is required')
 
-    tokenEntry = Token.query.filter_by(access_token=token).first()
-    if tokenEntry is None:
-        raise AuthorizationError('Invalid token')
-    return tokenEntry.user_id
+        tokenEntry = Token.query.filter_by(access_token=token).first()
+        if tokenEntry is None:
+            raise AuthorizationError('Invalid token')
+        return tokenEntry.user_id
+    except SQLAlchemyError as e:
+        print(f"Database Error: {e}")
+        raise Exception('An error occurred while fetching user id from token')
 
 def createNewProjectAndSave(requestData, userId):
     try:

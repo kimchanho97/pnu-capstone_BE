@@ -1,10 +1,27 @@
 from flask import Blueprint, request, jsonify, make_response
-from .utils import createNewProjectAndSave, getUserIdFromToken, AuthorizationError, fetchProjects, deleteProjectById, \
-    getCurrentCommitMessage
+from .utils import createNewProjectAndSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
+    getCurrentCommitMessage, getProjectDetailById
+from .error import AuthorizationError
 from ..models import Project, Build
 from .. import db
 
 projectBlueprint = Blueprint('project', __name__)
+
+@projectBlueprint.route('/<projectId>', methods=['GET'])
+def getProjectDetail(projectId):
+    try:
+        token = request.headers.get('Authorization')
+        token = token.split(' ')[1]
+        getUserIdFromToken(token)
+        data = getProjectDetailById(projectId)
+        return make_response(jsonify(data), 200)
+    except AuthorizationError as e:
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
+    except Exception as e:
+        return jsonify({'error': {'message': 'serverError',
+                                  'status': 500}}), 500
+
 
 @projectBlueprint.route('/status/<projectId>', methods=['GET'])
 def getProjectStatus(projectId):
