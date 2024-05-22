@@ -26,6 +26,7 @@ class Project(db.Model):
     __tablename__ = 'Project'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+    deploy_id = db.Column(db.Integer, db.ForeignKey('Deploy.id'), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     framework = db.Column(db.String(255), nullable=False)
     port = db.Column(db.Integer, nullable=True)
