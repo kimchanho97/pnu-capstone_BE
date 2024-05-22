@@ -23,7 +23,7 @@ def create_app():
     app.config['CELERY_RESULT_BACKEND'] = os.getenv('CELERY_RESULT_BACKEND')
 
     db.init_app(app)
-    from .models import User, Token, Project, Build, Deployment, Secret
+    from .models import User, Token, Project, Build, Deploy, Secret
     migrate.init_app(app, db)
 
     # 블루프린트와 서비스 로직 동적 로딩
