@@ -10,7 +10,8 @@ def githubLogin():
     # print("authCode: ", authCode)
 
     if not authCode:
-        return jsonify({'error': 'Authorization code is required'}), 400
+        return jsonify({'error': {'message': 'Authorization code is required',
+                                  'status': 400}}), 400
 
     # auth_code를 이용해 액세스 토큰을 받아옴
     responseJson = getAccessTokenFromGithub(authCode)
@@ -43,4 +44,5 @@ def githubLogin():
         return response
     else:
         errorMessage = responseJson.get('error_description', 'Unknown error occurred.')
-        return jsonify({'error': responseJson.get('error', 'error'), 'error_description': errorMessage}), 400
+        return jsonify({'error': {'message': errorMessage,
+                                  'status': 400}}), 400
