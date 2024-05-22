@@ -6,6 +6,26 @@ from .. import db
 
 projectBlueprint = Blueprint('project', __name__)
 
+@projectBlueprint.route('/status/<projectId>', methods=['GET'])
+def getProjectStatus(projectId):
+    try:
+        token = request.headers.get('Authorization')
+        token = token.split(' ')[1]
+        getUserIdFromToken(token)
+        project = Project.query.filter_by(id=projectId).first()
+        if project is None:
+            return jsonify({'error': {'message': 'Project not found',
+                                      'status': 404}}), 404
+
+        return jsonify({'status': project.status}), 200
+    except AuthorizationError as e:
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
+    except Exception as e:
+        return jsonify({'error': {'message': 'An error occurred while building the project.',
+                                  'status': 500}}), 500
+
+
 @projectBlueprint.route('/build', methods=['POST'])
 def buildProject():
     try:
@@ -16,7 +36,8 @@ def buildProject():
         projectId = request.json['id']
         project = Project.query.filter_by(id=projectId).first()
         if project is None:
-            return jsonify({'error': 'Project not found'}), 404
+            return jsonify({'error': {'message': 'Project not found',
+                                      'status': 4000}}), 404
 
         # 프로젝트 이름과 유저 아이디를 이용해 커밋 메시지를 가져옴
         commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token)
@@ -24,7 +45,8 @@ def buildProject():
 
         build = Build.query.filter_by(project_id=projectId, image_tag=sha[:7]).first()
         if build:
-            return jsonify({'error': 'Build already exists'}), 400
+            return jsonify({'error': {'message': 'Build already exists',
+                                      'status': 4001}}), 400
 
         # 프로젝트 상태를 빌드 중으로 변경
         project.status = 1
@@ -41,9 +63,11 @@ def buildProject():
 
         return make_response(jsonify({'message': 'Project build started successfully!'}), 200)
     except AuthorizationError as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
     except Exception as e:
-        return jsonify({'error': 'An error occurred while building the project.'}), 500
+        return jsonify({'error': {'message': 'An error occurred while building the project.',
+                                  'status': 500}}), 500
 
 
 @projectBlueprint.route('/<projectId>', methods=['DELETE'])
@@ -55,9 +79,11 @@ def deleteProject(projectId):
         deleteProjectById(projectId)
         return make_response(jsonify({'message': 'Project deleted successfully!'}), 200)
     except AuthorizationError as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
     except Exception as e:
-        return jsonify({'error': 'An error occurred while deleting the project.'}), 500
+        return jsonify({'error': {'message': 'An error occurred while building the project.',
+                                  'status': 500}}), 500
 
 
 @projectBlueprint.route('/', methods=['GET'])
@@ -84,11 +110,8 @@ def createProject():
         createNewProjectAndSave(requestData, userId)
         return make_response(jsonify({'message': 'Project created successfully!'}), 201)
     except AuthorizationError as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
     except Exception as e:
-        return jsonify({'error': 'An error occurred while creating the project.'}), 500
-
-
-
-
-
+        return jsonify({'error': {'message': 'An error occurred while building the project.',
+                                  'status': 500}}), 500
