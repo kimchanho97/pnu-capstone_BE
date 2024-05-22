@@ -38,7 +38,7 @@ class Project(db.Model):
     webhook_url = db.Column(db.String(255), nullable=True)
 
     builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan')
-    deployments = db.relationship('Deployment', backref='Project', lazy=True, cascade='all, delete-orphan')
+    deploys = db.relationship('Deploy', backref='Project', lazy=True, cascade='all, delete-orphan')
     secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
@@ -56,15 +56,15 @@ class Build(db.Model):
     def __repr__(self):
         return f'<Build {self.id}>'
 
-class Deployment(db.Model):
-    __tablename__ = 'Deployment'
+class Deploy(db.Model):
+    __tablename__ = 'Deploy'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('Project.id'), nullable=False)
     build_id = db.Column(db.Integer, db.ForeignKey('Build.id'), nullable=False)
     deploy_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<Deployment {self.id}>'
+        return f'<Deploy {self.id}>'
 
 class Secret(db.Model):
     __tablename__ = 'Secret'
