@@ -27,7 +27,6 @@ def getAccessTokenFromGithub(authCode):
 
     # 액세스 토큰을 받기 위해 POST 요청 수행
     response = requests.post(tokenUrl, data=data, headers=headers)
-    print("response status code = ", response.status_code)
     print("github response = ", response.json())
 
     return response.json()
