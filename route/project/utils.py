@@ -3,6 +3,12 @@ from ..models import Project, Secret, Token, User, Build, Deploy
 import requests
 from sqlalchemy.exc import SQLAlchemyError
 from .error import AuthorizationError
+from flask_sse import sse
+
+
+def sendSseMessage(channel, message):
+    sse.publish(message, type='message', channel=channel)
+
 
 def getProjectDetailById(projectId):
     try:
@@ -21,15 +27,14 @@ def getProjectDetailById(projectId):
                 'imageTag': build.image_tag
             })
 
-        deploys = Deploy.query.filter_by(project_id=projectId).all()
-        for deploy in deploys:
-            data['deploys'].append({
-                'id': deploy.id,
-                'deployDate': deploy.deploy_date,
-            })
-            build = Build.query.filter_by(id=deploy.build_id).first()
-            data['deploys'][-1]['commitMsg'] = build.commit_msg
-            data['deploys'][-1]['imageTag'] = build.image_tag
+            deploy = Deploy.query.filter_by(build_id=build.id).first()
+            if deploy is not None:
+                data['deploys'].append({
+                    'id': deploy.id,
+                    'deployDate': deploy.deploy_date,
+                    'commitMsg': build.commit_msg,
+                    'imageTag': build.image_tag
+                })
 
         data['domainUrl'] = project.domain_url
         data['webhookUrl'] = project.webhook_url
@@ -47,7 +52,7 @@ def getProjectDetailById(projectId):
         raise Exception('An error occurred while fetching project detail')
 
 
-def createBuildAndSave(projectId, commitMsg, imageName, imageTag):
+def createBuildAndFlush(projectId, commitMsg, imageName, imageTag):
     # 빌드 정보를 저장
     newBuild = Build(
         project_id=projectId,
@@ -56,8 +61,9 @@ def createBuildAndSave(projectId, commitMsg, imageName, imageTag):
         image_tag=imageTag
     )
     db.session.add(newBuild)
-    db.session.commit()
-    return
+    db.session.flush()
+
+    return newBuild.id
 
 def getCurrentCommitMessage(projectName, userId, token):
     user = User.query.filter_by(id=userId).first()
@@ -89,17 +95,22 @@ def deleteProjectById(projectId):
     return
 
 def fetchProjects(userId):
-    # 유저 아이디를 이용해 프로젝트 리스트를 가져와 반환
-    projects = Project.query.filter_by(user_id=userId).all()
-    projectList = []
-    for project in projects:
-        projectList.append({
-            'id': project.id,
-            'name': project.name,
-            'status': project.status,
-            'framework': project.framework,
-        })
-    return projectList
+    try:
+        # 유저 아이디를 이용해 프로젝트 리스트를 가져와 반환
+        projects = Project.query.filter_by(user_id=userId).all()
+        projectList = []
+        for project in projects:
+            projectList.append({
+                'id': project.id,
+                'name': project.name,
+                'status': project.status,
+                'framework': project.framework,
+                'currentBuildId': project.current_build_id,
+                'currentDeployId': project.current_deploy_id
+            })
+        return projectList
+    except SQLAlchemyError as e:
+        raise Exception('Database Error: An error occurred while fetching projects')
 
 def getUserIdFromToken(token):
     try:

@@ -5,6 +5,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_sse import sse
 
 # 환경 변수 로드
 load_dotenv()
@@ -18,6 +19,7 @@ def create_app():
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config["REDIS_URL"] = os.getenv('REDIS_URL')
 
     db.init_app(app)
     from .models import User, Token, Project, Build, Deploy, Secret
@@ -29,6 +31,8 @@ def create_app():
 
     from .project.routes import projectBlueprint
     app.register_blueprint(projectBlueprint, url_prefix='/project')
+
+    app.register_blueprint(sse, url_prefix='/stream')
 
     # OPTIONS 요청에 대한 응답을 위한 미들웨어
     @app.after_request

@@ -1,11 +1,38 @@
 from flask import Blueprint, request, jsonify, make_response
 from .utils import createNewProjectAndSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
-    getCurrentCommitMessage, getProjectDetailById
+    getCurrentCommitMessage, getProjectDetailById, createBuildAndFlush, sendSseMessage
 from .error import AuthorizationError
 from ..models import Project, Build
 from .. import db
+from .task import triggerArgoWorkflow
 
 projectBlueprint = Blueprint('project', __name__)
+
+@projectBlueprint.route('/argo/build', methods=['POST'])
+def handleArgoBuildEvent():
+    try:
+        data = request.json
+        projectId = data['projectId']
+        imageName = data['imageName']
+        imageTag = data['imageTag']
+        commitMsg = data['commitMsg']
+        status = data['status']
+
+        project = Project.query.filter_by(id=projectId).first()
+
+        if status == 'Succeeded':
+            newBuildId = createBuildAndFlush(projectId, commitMsg, imageName, imageTag)
+            project.status = 2  # 빌드 완료
+            project.current_build_id = newBuildId
+        else:
+            project.status = 5  # 빌드 실패
+        db.session.commit()
+
+        sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status, 'currentBuildId': project.current_build_id, 'currentDeployId': project.current_deploy_id})
+        return make_response(jsonify({'message': 'project build success'}), 200)
+    except Exception as e:
+        return jsonify({'error': {'message': 'An error occurred while building the project.',
+                                  'status': 500}}), 500
 
 @projectBlueprint.route('/<projectId>', methods=['GET'])
 def getProjectDetail(projectId):
@@ -65,16 +92,22 @@ def buildProject():
             return jsonify({'error': {'message': 'Build already exists',
                                       'status': 4001}}), 400
 
-        # 프로젝트 상태를 빌드 중으로 변경
-        project.status = 1
-        db.session.commit()
-
-        # 현재 시간을 이용해 이미지 이름과 태그를 생성
         imageName = project.name
         imageTag = sha[:7]
 
+        workflowResponse = triggerArgoWorkflow(projectId, imageName, imageTag, commitMsg)
+        # Argo Workflow 요청이 실패하는 경우
+        if workflowResponse.status_code != 200:
+            project.status = 5
+            db.session.commit()
+            return jsonify({'error': {'message': 'Failed to trigger Argo Workflow.',
+                                      'status': 500}}), 500
 
+        # Argo Workflow 요청이 성공하는 경우 프로젝트 상태를 빌드 중으로 변경
+        project.status = 1
+        db.session.commit()
 
+        sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status})
 
         return make_response(jsonify({'message': 'Project build started successfully!'}), 200)
     except AuthorizationError as e:
