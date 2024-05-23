@@ -19,9 +19,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    app.config['CELERY_BROKER_URL'] = os.getenv('CELERY_BROKER_URL')
-    app.config['CELERY_RESULT_BACKEND'] = os.getenv('CELERY_RESULT_BACKEND')
-
     db.init_app(app)
     from .models import User, Token, Project, Build, Deploy, Secret
     migrate.init_app(app, db)

@@ -73,10 +73,8 @@ def buildProject():
         imageName = project.name
         imageTag = sha[:7]
 
-        # 비동기 작업으로 빌드 수행
-        from .task import buildProjectTask
-        print("buildProjectTask Start")
-        buildProjectTask.delay(projectId, commitMsg, imageName, imageTag)
+
+
 
         return make_response(jsonify({'message': 'Project build started successfully!'}), 200)
     except AuthorizationError as e:
@@ -85,6 +83,36 @@ def buildProject():
     except Exception as e:
         return jsonify({'error': {'message': 'An error occurred while building the project.',
                                   'status': 500}}), 500
+
+@projectBlueprint.route('/deploy', methods=['POST'])
+def deployProject():
+    try:
+        token = request.headers.get('Authorization')
+        token = token.split(' ')[1]
+        getUserIdFromToken(token)
+
+        buildId = request.json['id']
+        build = Build.query.filter_by(id=buildId).first()
+        if build is None:
+            return jsonify({'error': {'message': 'Build not found',
+                                      'status': 4000}}), 404
+
+        projectId = build.project_id
+        project = Project.query.filter_by(id=projectId).first()
+
+        # 프로젝트 상태를 배포 중으로 변경
+        project.status = 3
+        db.session.commit()
+
+
+        return make_response(jsonify({'message': 'Project deploy started successfully!'}), 200)
+    except AuthorizationError as e:
+        return jsonify({'error': {'message': str(e),
+                                  'status': 401}}), 401
+    except Exception as e:
+        return jsonify({'error': {'message': 'An error occurred while deploying the project.',
+                                  'status': 500}}), 500
+
 
 
 @projectBlueprint.route('/<projectId>', methods=['DELETE'])
