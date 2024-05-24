@@ -1,14 +1,45 @@
 from flask import Blueprint, request, jsonify, make_response
 from .utils import createNewProjectAndSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
-    getCurrentCommitMessage, getProjectDetailById, createBuildAndFlush, sendSseMessage
+    getCurrentCommitMessage, getProjectDetailById, createBuildAndFlush, sendSseMessage, createDeployAndFlush
 from .error import AuthorizationError
-from ..models import Project, Build
+from ..models import Project, Build, Deploy
 from .. import db
-from .task import triggerArgoWorkflow
+from .task import triggerArgoWorkflow, deployWithHelm
 
 projectBlueprint = Blueprint('project', __name__)
 
-@projectBlueprint.route('/argo/build', methods=['POST'])
+
+@projectBlueprint.route('/deploy/event', methods=['POST'])
+def handleHelmWebhook():
+    try:
+        data = request.json
+        buildId = data['buildId']
+        status = data['status']
+
+        build = Build.query.filter_by(id=buildId).first()
+        project = Project.query.filter_by(id=build.project_id).first()
+
+        if status == 'Succeeded':
+            newDeployId = createDeployAndFlush(buildId)
+            project.status = 4  # 배포 완료
+            project.current_deploy_id = newDeployId
+            project.current_build_id = buildId
+        else:
+            project.status = 6  # 배포 실패
+
+        db.session.commit()
+        sendSseMessage(f"{project.user_id}", {'projectId': project.id,
+                                              'status': project.status,
+                                              'currentBuildId': project.current_build_id,
+                                              'currentDeployId': project.current_deploy_id})
+
+        return jsonify({'message': 'Webhook event processed successfully!'}), 200
+    except Exception as e:
+        return jsonify({'error': {'message': 'An error occurred while processing the webhook event.',
+                                  'status': 500}}), 500
+
+
+@projectBlueprint.route('/build/event', methods=['POST'])
 def handleArgoBuildEvent():
     try:
         data = request.json
@@ -28,7 +59,11 @@ def handleArgoBuildEvent():
             project.status = 5  # 빌드 실패
         db.session.commit()
 
-        sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status, 'currentBuildId': project.current_build_id, 'currentDeployId': project.current_deploy_id})
+        sendSseMessage(f"{project.user_id}", {'projectId': projectId,
+                                              'status': project.status,
+                                              'currentBuildId': project.current_build_id,
+                                              'currentDeployId': project.current_deploy_id})
+
         return make_response(jsonify({'message': 'project build success'}), 200)
     except Exception as e:
         return jsonify({'error': {'message': 'An error occurred while building the project.',
@@ -87,8 +122,9 @@ def buildProject():
         commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token)
         print("repo_name:", project.name, ",commit_msg:", commitMsg, ",sha:", sha[:7])
 
+
         build = Build.query.filter_by(project_id=projectId, image_tag=sha[:7]).first()
-        if build:
+        if build is not None:
             return jsonify({'error': {'message': 'Build already exists',
                                       'status': 4001}}), 400
 
@@ -133,10 +169,24 @@ def deployProject():
         projectId = build.project_id
         project = Project.query.filter_by(id=projectId).first()
 
+        deploy = Deploy.query.filter_by(build_id=buildId).first()
+        if deploy is not None:
+            return jsonify({'error': {'message': 'Deploy already exists',
+                                      'status': 4001}}), 400
+
+        # 배포 요청
+        success, errorMessage = deployWithHelm(buildId, build.image_name, build.image_tag)
+        if not success:
+            project.status = 6  # 배포 실패 상태
+            db.session.commit()
+            return jsonify({'error': {'message': 'Helm command failed: ' + errorMessage,
+                                      'status': 500}}), 500
+
         # 프로젝트 상태를 배포 중으로 변경
         project.status = 3
         db.session.commit()
 
+        sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status})
 
         return make_response(jsonify({'message': 'Project deploy started successfully!'}), 200)
     except AuthorizationError as e:

@@ -1,4 +1,4 @@
-import requests
+import requests, subprocess
 
 def triggerArgoWorkflow(projectId, imageName, imageTag, commitMsg):
     print('"projectId":', projectId)
@@ -44,3 +44,20 @@ def triggerArgoWorkflow(projectId, imageName, imageTag, commitMsg):
     response.status_code = 200
 
     return response
+
+
+def deployWithHelm(buildId, imageName, imageTag):
+    print('"buildId":', buildId)
+    print('"status":', '"Succeeded"')
+    helmChartPath = '/path/to/helm/chart'
+    helm_upgrade_command = [
+        'helm', 'upgrade', '--install', helmChartPath,
+        '--set', f'image.repository={imageName}',
+        '--set', f'image.tag={imageTag}'
+    ]
+
+    try:
+        # subprocess.run(helm_upgrade_command, check=True)
+        return True, None
+    except subprocess.CalledProcessError as e:
+        return False, str(e)

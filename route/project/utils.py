@@ -31,6 +31,7 @@ def getProjectDetailById(projectId):
             if deploy is not None:
                 data['deploys'].append({
                     'id': deploy.id,
+                    'buildId': deploy.build_id,
                     'deployDate': deploy.deploy_date,
                     'commitMsg': build.commit_msg,
                     'imageTag': build.image_tag
@@ -64,6 +65,16 @@ def createBuildAndFlush(projectId, commitMsg, imageName, imageTag):
     db.session.flush()
 
     return newBuild.id
+
+def createDeployAndFlush(buildId):
+    # 배포 정보를 저장
+    newDeploy = Deploy(
+        build_id=buildId
+    )
+    db.session.add(newDeploy)
+    db.session.flush()
+
+    return newDeploy.id
 
 def getCurrentCommitMessage(projectName, userId, token):
     user = User.query.filter_by(id=userId).first()
