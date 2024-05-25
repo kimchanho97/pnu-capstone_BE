@@ -16,7 +16,7 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, expose_headers='Authorization')
+    CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers='Authorization')
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
