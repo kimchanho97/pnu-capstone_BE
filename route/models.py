@@ -42,12 +42,21 @@ class Project(db.Model):
     cpu_threshold = db.Column(db.Integer, nullable=True)
     domain_url = db.Column(db.String(255), nullable=True)
     webhook_url = db.Column(db.String(255), nullable=True)
+    subdomain = db.Column(db.String(255), nullable=False)
 
+    logs = db.relationship('Log', backref='project', uselist=False, lazy=True)
     builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan', foreign_keys='Build.project_id')
     secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'Project: id={self.id}, name={self.name}, status={self.status}'
+
+
+class Log(db.Model):
+    __tablename__ = 'Log'
+    project_id = db.Column(db.Integer, db.ForeignKey('Project.id'), primary_key=True)
+    build_log = db.Column(db.LONGTEXT, nullable=False)
+    deploy_log = db.Column(db.LONGTEXT, nullable=False)
 
 class Build(db.Model):
     __tablename__ = 'Build'
