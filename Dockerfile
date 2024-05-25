@@ -3,4 +3,4 @@ WORKDIR /work
 COPY . /work/
 RUN pip install -r requirements.txt
 EXPOSE 8080
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "flask db upgrade && flask run --host=0.0.0.0 --port=8080"]
