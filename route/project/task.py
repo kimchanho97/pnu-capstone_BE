@@ -11,9 +11,17 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     # github_repository: repository name
     # git_token: github token
     # commit_sha: commit sha[:7]
+    
     if not release_name or not github_repository or not github_name:
         raise CreatingProjectHelmError("release_name, github_repository, github_name are required")
-
+    print(f"release_name: {release_name}")
+    print(f"envs: {envs}")
+    print(f"subdomain: {subdomain}")
+    print(f"github_name: {github_name}")
+    print(f"github_repository: {github_repository}")
+    print(f"git_token: {git_token}")
+    print(f"commit_sha: {commit_sha}")
+    print(f"project_id: {project_id}")
     app_release_name = release_name
     app_chart_name = "app-template"
     ci_release_name = release_name + "-ci"
@@ -48,7 +56,7 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     ]
     for key, value in ci_values.items():
         ci_command.extend(['--set', f"{key}={value}"])
-
+    print(f"ci_command: {' '.join(ci_command)}")
     ci_result = subprocess.run(ci_command, capture_output=True, text=True)
     if ci_result.returncode != 0:
         raise CreatingProjectHelmError(ci_result.stderr)
@@ -58,7 +66,7 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     ]
     for key, value in app_values.items():
         app_command.extend(['--set', f"{key}={value}"])
-
+    print(f"app_command: {' '.join(app_command)}")
     app_result = subprocess.run(app_command, capture_output=True, text=True)
     if app_result.returncode != 0:
         raise CreatingProjectHelmError(app_result.stderr)
