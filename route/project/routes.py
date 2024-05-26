@@ -2,10 +2,11 @@ from flask import Blueprint, request, jsonify, make_response
 from .utils import createNewProjectAndLogThenSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
     getCurrentCommitMessage, getProjectDetailById, createBuildAndFlush, sendSseMessage, createDeployAndFlush
 from .error import AuthorizationError
-from ..models import Project, Build, Deploy
+from ..models import Project, Build, Deploy, User, Token
 from .. import db
-from .task import triggerArgoWorkflow, deployWithHelm
+from .task import triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, CreatingProjectHelmError
 from .constant import successResponse
+from .error import ArgoWorkflowError, DeployingProjectHelmError
 
 projectBlueprint = Blueprint('project', __name__)
 
@@ -70,6 +71,7 @@ def checkSubdomain():
         return jsonify({'error': {'message': 'An error occurred while checking the subdomain.',
                                   'status': 500}}), 500
 
+
 @projectBlueprint.route('/build', methods=['POST'])
 def buildProject():
     try:
@@ -87,16 +89,14 @@ def buildProject():
         commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token)
         print("repo_name:", project.name, ",commit_msg:", commitMsg, ",sha:", sha[:7])
 
-
         build = Build.query.filter_by(project_id=projectId, image_tag=sha[:7]).first()
         if build is not None:
             return jsonify({'error': {'message': 'Build already exists',
                                       'status': 4001}}), 400
 
-        imageName = project.name
-        imageTag = sha[:7]
+        workflowResponse = triggerArgoWorkflow(ci_domain=project.webhook_url,
+                                               imageTag=sha[:7])
 
-        workflowResponse = triggerArgoWorkflow(projectId, imageName, imageTag, commitMsg)
         # Argo Workflow 요청이 실패하는 경우
         if workflowResponse.status_code != 200:
             project.status = 5
@@ -111,6 +111,9 @@ def buildProject():
         sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status})
 
         return make_response(jsonify({'message': 'Project build started successfully!'}), 200)
+    except ArgoWorkflowError as e:
+        return jsonify({'error': {'message': str(e),
+                                  'status': 500}}), 500
     except AuthorizationError as e:
         return jsonify({'error': {'message': str(e),
                                   'status': 401}}), 401
@@ -141,12 +144,7 @@ def deployProject():
                                       'status': 4001}}), 400
 
         # 배포 요청
-        success, errorMessage = deployWithHelm(buildId, build.image_name, build.image_tag)
-        if not success:
-            project.status = 6  # 배포 실패 상태
-            db.session.commit()
-            return jsonify({'error': {'message': 'Helm command failed: ' + errorMessage,
-                                      'status': 500}}), 500
+        deployWithHelm(release_name=project.name, image_tag=build.image_tag)
 
         # 프로젝트 상태를 배포 중으로 변경
         project.status = 3
@@ -155,6 +153,9 @@ def deployProject():
         sendSseMessage(f"{project.user_id}", {'projectId': projectId, 'status': project.status})
 
         return make_response(jsonify({'message': 'Project deploy started successfully!'}), 200)
+    except DeployingProjectHelmError as e:
+        return jsonify({'error': {'message': str(e),
+                                  'status': 500}}), 500
     except AuthorizationError as e:
         return jsonify({'error': {'message': str(e),
                                   'status': 401}}), 401
@@ -170,8 +171,52 @@ def createProject():
         token = token.split(' ')[1]
         userId = getUserIdFromToken(token)
         requestData = request.json
-        createNewProjectAndLogThenSave(requestData, userId)
+
+        user = User.query.filter_by(id=userId).first()
+
+        name = requestData['name']
+        envs = {}
+        secrets = requestData['secrets']
+        for secret in secrets:
+            envs[secret['key']] = secret['value']
+        subdomain = requestData['subdomain']
+        githubName = user.login
+        githubRepo = requestData['name']
+
+        commitMsg, sha = getCurrentCommitMessage(name, userId, token)
+
+        # 프로젝트를 먼저 DB에 생성하여 ID를 받아옴
+        newProject = Project(
+            user_id=userId,
+            name=requestData['name'],
+            framework=requestData['framework'],
+            port=int(requestData['port']) if requestData['port'] else None,
+            auto_scaling=requestData['autoScaling'],
+            min_replicas=int(requestData['minReplicas']) if requestData['minReplicas'] else None,
+            max_replicas=int(requestData['maxReplicas']) if requestData['maxReplicas'] else None,
+            cpu_threshold=int(requestData['cpuThreshold']) if requestData['cpuThreshold'] else None,
+            subdomain=requestData['subdomain']
+        )
+        db.session.add(newProject)
+        db.session.flush()
+
+        try:
+            webhookUrl, domainUrl = createProjectWithHelm(release_name=name,
+                                                          envs=envs,
+                                                          subdomain=subdomain,
+                                                          github_name=githubName,
+                                                          github_repository=githubRepo,
+                                                          git_token=token,
+                                                          commit_sha=sha)
+        except CreatingProjectHelmError as e:
+            db.session.rollback()
+            return jsonify({'error': {'message': str(e),
+                                      'status': 500}}), 500
+
+        # Helm 요청이 성공한 경우, URL 업데이트 및 로그 생성 후 커밋
+        createNewProjectAndLogThenSave(requestData, newProject, webhookUrl, domainUrl)
         return make_response(jsonify({'message': 'Project created successfully!'}), 201)
+
     except AuthorizationError as e:
         return jsonify({'error': {'message': str(e),
                                   'status': 401}}), 401
@@ -185,14 +230,20 @@ def handleArgoBuildEvent():
     try:
         data = request.json
         projectId = data['projectId']
-        imageName = data['imageName']
-        imageTag = data['imageTag']
-        commitMsg = data['commitMsg']
         status = data['status']
 
         project = Project.query.filter_by(id=projectId).first()
+        user = User.query.filter_by(id=project.user_id).first()
+        token = Token.query.filter_by(user_id=user.id).first().access_token
 
-        if status == 'Succeeded':
+        commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token.access_token)
+
+        imageName = project.name
+        imageTag = sha[:7]
+
+        project = Project.query.filter_by(id=projectId).first()
+
+        if status == 'build-success':
             newBuildId = createBuildAndFlush(projectId, commitMsg, imageName, imageTag)
             project.status = 2  # 빌드 완료
             project.current_build_id = newBuildId

@@ -146,27 +146,11 @@ def getUserIdFromToken(token):
         print(f"Database Error: {e}")
         raise Exception('An error occurred while fetching user id from token')
 
-def createNewProjectAndLogThenSave(requestData, userId):
+def createNewProjectAndLogThenSave(requestData, newProject, webhookUrl, domainUrl):
     try:
         print("requestData = ", requestData)
-        port = int(requestData['port']) if requestData['port'] else None
-        minReplicas = int(requestData['minReplicas']) if requestData['minReplicas'] else None
-        maxReplicas = int(requestData['maxReplicas']) if requestData['maxReplicas'] else None
-        cpuThreshold = int(requestData['cpuThreshold']) if requestData['cpuThreshold'] else None
-
-        newProject = Project(
-            user_id=userId,
-            name=requestData['name'],
-            framework=requestData['framework'],
-            port=port,
-            auto_scaling=requestData['autoScaling'],
-            min_replicas=minReplicas,
-            max_replicas=maxReplicas,
-            cpu_threshold=cpuThreshold,
-            subdomain=requestData['subdomain']
-        )
-        db.session.add(newProject)
-        db.session.flush()
+        newProject.webhook_url = webhookUrl
+        newProject.domain_url = domainUrl
 
         newLog = Log(
             project_id=newProject.id,
@@ -188,6 +172,4 @@ def createNewProjectAndLogThenSave(requestData, userId):
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        raise e
-
-    return
+        raise Exception('An error occurred while creating new project')
