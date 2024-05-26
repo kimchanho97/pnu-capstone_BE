@@ -34,6 +34,8 @@ def create_app():
     app.register_blueprint(projectBlueprint, url_prefix='/project')
 
     app.register_blueprint(sse, url_prefix='/stream')
+
+
     # 데이터베이스 테이블 정보를 반환하는 엔드포인트
     @app.route('/tables', methods=['GET'])
     def get_tables():
@@ -49,6 +51,8 @@ def create_app():
                 })
             tables[table_name] = columns
         return jsonify(tables)
+
+
     # OPTIONS 요청에 대한 응답을 위한 미들웨어
     @app.after_request
     def after_request(response):

@@ -9,8 +9,8 @@ def getAccessTokenFromGithub(authCode):
     # GitHub 앱의 클라이언트 ID와 클라이언트 시크릿 설정
     clientId = os.getenv("GITHUB_CLIENT_ID")
     clientSecret = os.getenv("GITHUB_CLIENT_SECRET")
-    redirectUri = 'http://localhost:3000/callback'
-
+    redirectUri = "https://pitapat.ne.kr/callback"
+    # redirectUri = 'http://localhost:3000/callback'
     # GitHub의 OAuth 서버 URL
     tokenUrl = 'https://github.com/login/oauth/access_token'
 
