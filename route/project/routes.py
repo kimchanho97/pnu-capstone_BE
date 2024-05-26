@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify, make_response
-from .utils import createNewProjectAndSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
+from .utils import createNewProjectAndLogThenSave, getUserIdFromToken, fetchProjects, deleteProjectById, \
     getCurrentCommitMessage, getProjectDetailById, createBuildAndFlush, sendSseMessage, createDeployAndFlush
 from .error import AuthorizationError
 from ..models import Project, Build, Deploy
 from .. import db
 from .task import triggerArgoWorkflow, deployWithHelm
+from .constant import successResponse
 
 projectBlueprint = Blueprint('project', __name__)
 
@@ -54,6 +55,20 @@ def deleteProject(projectId):
         return jsonify({'error': {'message': 'An error occurred while building the project.',
                                   'status': 500}}), 500
 
+
+@projectBlueprint.route('/subdomain/check', methods=['GET'])
+def checkSubdomain():
+    try:
+        subdomain = request.args.get('name')
+        project = Project.query.filter_by(subdomain=subdomain).first()
+        if project:
+            return jsonify({'error': {'message': "이미 존재하는 SubDomain입니다.",
+                                      'status': 4000}}), 400
+
+        return make_response(jsonify(successResponse), 200)
+    except Exception as e:
+        return jsonify({'error': {'message': 'An error occurred while checking the subdomain.',
+                                  'status': 500}}), 500
 
 @projectBlueprint.route('/build', methods=['POST'])
 def buildProject():
@@ -155,7 +170,7 @@ def createProject():
         token = token.split(' ')[1]
         userId = getUserIdFromToken(token)
         requestData = request.json
-        createNewProjectAndSave(requestData, userId)
+        createNewProjectAndLogThenSave(requestData, userId)
         return make_response(jsonify({'message': 'Project created successfully!'}), 201)
     except AuthorizationError as e:
         return jsonify({'error': {'message': str(e),
