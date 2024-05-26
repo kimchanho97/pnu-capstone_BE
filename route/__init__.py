@@ -33,8 +33,10 @@ def create_app():
     from .project.routes import projectBlueprint
     app.register_blueprint(projectBlueprint, url_prefix='/project')
 
+    # Add CORS for sse blueprint
+    cors = CORS()
+    cors.init_app(sse, resources={r"/stream/*": {"origins": "*"}})
     app.register_blueprint(sse, url_prefix='/stream')
-
 
     # 데이터베이스 테이블 정보를 반환하는 엔드포인트
     @app.route('/tables', methods=['GET'])
