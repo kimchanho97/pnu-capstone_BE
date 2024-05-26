@@ -44,7 +44,7 @@ class Project(db.Model):
     webhook_url = db.Column(db.String(255), nullable=True)
     subdomain = db.Column(db.String(255), nullable=False)
 
-    logs = db.relationship('Log', backref='project', uselist=False, lazy=True)
+    logs = db.relationship('Log', backref='project', uselist=False, lazy=True, cascade='all, delete-orphan')
     builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan', foreign_keys='Build.project_id')
     secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
 
@@ -55,8 +55,8 @@ class Project(db.Model):
 class Log(db.Model):
     __tablename__ = 'Log'
     project_id = db.Column(db.Integer, db.ForeignKey('Project.id'), primary_key=True)
-    build_log = db.Column(db.LONGTEXT, nullable=False)
-    deploy_log = db.Column(db.LONGTEXT, nullable=False)
+    build_log = db.Column(db.TEXT, nullable=False)
+    deploy_log = db.Column(db.TEXT, nullable=False)
 
 class Build(db.Model):
     __tablename__ = 'Build'
