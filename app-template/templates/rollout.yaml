@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "app-template.fullname" . }}
+  namespace: {{ include "app-template.fullname" . }}
+  labels:
+    {{- include "app-template.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "app-template.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "app-template.fullname" . }}
+    spec:
+      containers:
+        - name: {{ include "app-template.fullname" . }}
+          image: ghcr.io/{{ .Values.githubName }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: Always
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+      imagePullSecrets:
+        - name: regcred
+  strategy:
+    blueGreen:
+      activeService: {{ include "app-template.fullname" . }}
+      previewService: {{ include "app-template.fullname" . }}-preview
+      autoPromotionEnabled: true

@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "create-projects.fullname" . }}-post-install-job
+  namespace: {{ include "create-projects.fullname" . }}
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      containers:
+        - name: post-install-job
+          image: curlimages/curl:latest
+          env:
+            - name: RELEASE_NAME
+              value: {{ include "create-projects.fullname" . }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              curl -X POST -H "Content-Type: application/json" \
+              -d '{"release_name": "{{ include "create-projects.fullname" . }}", "status": "project-created"}' \
+              https://webhook.site/66c9e4e9-24b0-47f2-bf5b-af193ce5558c
+      restartPolicy: OnFailure

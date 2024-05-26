@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: rollout-template
+  namespace: {{ include "create-projects.fullname" . }}
+spec:
+  entrypoint: main
+  templates:
+    - dag:
+        tasks:
+          - name: deploy
+            template: deploy
+      name: main
+    - name: deploy
+      resource:
+        action: apply
+        manifest: |
+          apiVersion: argoproj.io/v1alpha1
+          kind: Rollout
+          metadata:
+            name: {{ .Values.apptemplateName }}
+            namespace: {{ .Values.apptemplateName }}
+          spec:
+            {{- if not .Values.autoscaling.enabled }}
+            replicas: {{ .Values.replicaCount }}
+            {{- end }}
+            selector:
+              matchLabels:
+                app: {{ .Values.apptemplateName }}
+            template:
+              metadata:
+                labels:
+                  app: {{ .Values.apptemplateName }}
+              spec:
+                containers:
+                  - name: {{ .Values.apptemplateName }}
+                    image: ghcr.io/{{ .Values.githubName }}/{{ .Values.apptemplateName }}:{{ `{{` }} workflow.parameters.tag {{ `}}` }}
+                    imagePullPolicy: Always
+                    ports:
+                      - containerPort: {{ .Values.service.port }}
+                imagePullSecrets:
+                  - name: regcred
+            strategy:
+              blueGreen:
+                activeService: {{ .Values.apptemplateName }}
+                previewService: {{ .Values.apptemplateName }}-preview
+                autoPromotionEnabled: true

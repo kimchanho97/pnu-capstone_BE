@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    workflows.argoproj.io/description: |
+      Recomended minimum permissions for the `emissary` executor.      
+  name: {{ include "create-projects.fullname" . }}
+  namespace: {{ include "create-projects.fullname" . }}
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - workflowtaskresults
+      - rollouts
+    verbs:
+      - create
+      - patch
