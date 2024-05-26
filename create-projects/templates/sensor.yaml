@@ -1,0 +1,102 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: {{ include "create-projects.fullname" . }}
+  namespace: {{ include "create-projects.fullname" . }}
+spec:
+  dependencies:
+    - eventName: ci-event
+      eventSourceName: {{ include "create-projects.fullname" . }}
+      name: ci
+  template:
+    serviceAccountName: {{ include "create-projects.fullname" . }}
+  triggers:
+    - template:
+        k8s:
+          operation: create
+          parameters:
+            - dest: spec.templates.1.inputs.parameters.0.value
+              src:
+                dataTemplate:
+                  '{{ "{{" }} .Input.body.after | substr 0 7 {{ "}}" }}'
+                dependencyName: ci
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: ci-
+                namespace: {{ include "create-projects.fullname" . }}
+              spec:
+                entrypoint: main
+                templates:
+                  - name: main
+                    dag:
+                      tasks:
+                        - name: image
+                          template: image
+                        - name: success-webhook
+                          template: success-webhook
+                          depends: image.Succeeded
+                        - name: failure-webhook
+                          template: failure-webhook
+                          depends: image.Failed
+                  - name: image
+                    inputs:
+                      artifacts:
+                        - name: source
+                          path: /work
+                          git:
+                            repo: https://{{ .Values.githubName }}:{{ .Values.githubToken }}@github.com/{{ .Values.githubName }}/{{ .Values.githubRepository }}.git
+                            branch: main
+                            singleBranch: true
+                            depth: 1
+                      parameters:
+                        - name: tag
+                    container:
+                      image: moby/buildkit:v0.11.0-rootless
+                      command: [buildctl-daemonless.sh]
+                      args:
+                        - build
+                        - --frontend
+                        - dockerfile.v0
+                        - --local
+                        - context=.
+                        - --local
+                        - dockerfile=.
+                        - --output
+                        - type=image,name=ghcr.io/pnu-capstone-4/{{ .Values.apptemplateName }}:{{ `{{` }} inputs.parameters.tag {{ `}}` }},push=true
+                      env:
+                        - name: BUILDKITD_FLAGS
+                          value: --oci-worker-no-process-sandbox
+                        - name: DOCKER_CONFIG
+                          value: /.docker
+                      workingDir: /work
+                      securityContext:
+                        privileged: true
+                      volumeMounts:
+                        - name: docker-config
+                          mountPath: /.docker
+                    volumes:
+                      - name: docker-config
+                        secret:
+                          secretName: docker-config
+                  - name: success-webhook
+                    container:
+                      image: curlimages/curl:latest
+                      command: ["/bin/sh", "-c"]
+                      args:
+                        - |
+                          curl -X POST -H "Content-Type: application/json" \
+                          -d '{"app_name": "{{ .Values.apptemplateName }}", "status": "build-success"}' \
+                          https://webhook.site/66c9e4e9-24b0-47f2-bf5b-af193ce5558c
+                  - name: failure-webhook
+                    container:
+                      image: curlimages/curl:latest
+                      command: ["/bin/sh", "-c"]
+                      args:
+                        - |
+                          curl -X POST -H "Content-Type: application/json" \
+                          -d '{"app_name": "{{ .Values.apptemplateName }}", "status": "build-failed"}' \
+                          https://webhook.site/66c9e4e9-24b0-47f2-bf5b-af193ce5558c
+        name: ci-workflow-trigger
