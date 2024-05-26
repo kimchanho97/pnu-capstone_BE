@@ -1,5 +1,5 @@
 from .. import db
-from ..models import Project, Secret, Token, User, Build, Deploy
+from ..models import Project, Secret, Token, User, Build, Deploy, Log
 import requests
 from sqlalchemy.exc import SQLAlchemyError
 from .error import AuthorizationError
@@ -13,7 +13,7 @@ def sendSseMessage(channel, message):
 def getProjectDetailById(projectId):
     try:
         # 프로젝트 아이디를 이용해 프로젝트 정보를 가져와 반환
-        data = {'builds': [], 'deploys': [], 'secrets': [], 'domainUrl': '', 'webhookUrl': ''}
+        data = {'builds': [], 'deploys': [], 'secrets': [], 'domainUrl': '', 'webhookUrl': '', 'subdomain': ''}
         project = Project.query.filter_by(id=projectId).first()
         if project is None:
             raise Exception('Project not found')
@@ -39,6 +39,7 @@ def getProjectDetailById(projectId):
 
         data['domainUrl'] = project.domain_url
         data['webhookUrl'] = project.webhook_url
+        data['subdomain'] = project.subdomain
 
         secrets = Secret.query.filter_by(project_id=projectId).all()
         for secret in secrets:
@@ -97,13 +98,21 @@ def getCurrentCommitMessage(projectName, userId, token):
     return commitMsg, sha
 
 def deleteProjectById(projectId):
-    # 프로젝트 아이디를 이용해 프로젝트를 삭제
-    project = Project.query.filter_by(id=projectId).first()
-    if project is None:
-        raise Exception('Project not found')
-    db.session.delete(project)
-    db.session.commit()
-    return
+    try:
+        # 프로젝트 아이디를 이용해 프로젝트를 삭제
+        project = Project.query.filter_by(id=projectId).first()
+        if project is None:
+            raise Exception('Project not found')
+
+        project.current_build_id = None
+        project.current_deploy_id = None
+
+        db.session.delete(project)
+        db.session.commit()
+        return
+    except SQLAlchemyError as e:
+        print(f"Database Error: {e}")
+        raise Exception('An error occurred while deleting project')
 
 def fetchProjects(userId):
     try:
@@ -137,7 +146,7 @@ def getUserIdFromToken(token):
         print(f"Database Error: {e}")
         raise Exception('An error occurred while fetching user id from token')
 
-def createNewProjectAndSave(requestData, userId):
+def createNewProjectAndLogThenSave(requestData, userId):
     try:
         print("requestData = ", requestData)
         port = int(requestData['port']) if requestData['port'] else None
@@ -154,9 +163,17 @@ def createNewProjectAndSave(requestData, userId):
             min_replicas=minReplicas,
             max_replicas=maxReplicas,
             cpu_threshold=cpuThreshold,
+            subdomain=requestData['subdomain']
         )
         db.session.add(newProject)
         db.session.flush()
+
+        newLog = Log(
+            project_id=newProject.id,
+            build_log='',
+            deploy_log=''
+        )
+        db.session.add(newLog)
 
         if len(requestData['secrets']) > 0:
             for secret in requestData['secrets']:
