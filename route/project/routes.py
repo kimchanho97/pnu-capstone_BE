@@ -207,7 +207,8 @@ def createProject():
                                                           github_name=githubName,
                                                           github_repository=githubRepo,
                                                           git_token=token,
-                                                          commit_sha=sha)
+                                                          commit_sha=sha,
+                                                          project_id=newProject.id)
         except CreatingProjectHelmError as e:
             db.session.rollback()
             return jsonify({'error': {'message': str(e),
