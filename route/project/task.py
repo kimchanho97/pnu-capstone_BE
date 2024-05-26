@@ -20,8 +20,8 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     ci_chart_name = "create-projects"
     docker_token = os.environ.get("DOCKER_TOKEN")
     ci_values = {
-        "fullnameOverride": ci_chart_name,
-        "apptemplateName": app_chart_name,
+        "fullnameOverride": ci_release_name,
+        "apptemplateName": app_release_name,
         "githubName": github_name,
         "gitToken": git_token,
         "githubRepository": github_repository,
@@ -35,9 +35,9 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
 
     subdomain = subdomain if subdomain else release_name
     app_values = {
-        "fullnameOverride": app_chart_name,
+        "fullnameOverride": app_release_name,
         "image.tag": commit_sha[:7],
-        "image.repository": app_chart_name,
+        "image.repository": app_release_name,
         "githubName": github_name,
         "subdomainName": subdomain,
         "dockerToken": docker_token
