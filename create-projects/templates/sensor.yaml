@@ -47,7 +47,7 @@ spec:
                         - name: source
                           path: /work
                           git:
-                            repo: https://{{ .Values.githubName }}:{{ .Values.githubToken }}@github.com/{{ .Values.githubName }}/{{ .Values.githubRepository }}.git
+                            repo: https://{{ .Values.githubName }}:{{ .Values.gitToken }}@github.com/{{ .Values.githubName }}/{{ .Values.githubRepository }}.git
                             branch: main
                             singleBranch: true
                             depth: 1
