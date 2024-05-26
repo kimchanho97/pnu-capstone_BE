@@ -15,9 +15,9 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
         raise CreatingProjectHelmError("release_name, github_repository, github_name are required")
 
     app_release_name = release_name
-    app_chart_name = "./app-template"
+    app_chart_name = "app-template"
     ci_release_name = release_name + "-ci"
-    ci_chart_name = "./create-projects"
+    ci_chart_name = "create-projects"
     docker_token = os.environ.get("DOCKER_TOKEN")
     ci_values = {
         "fullnameOverride": ci_chart_name,
