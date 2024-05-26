@@ -221,7 +221,7 @@ def createProject():
         return jsonify({'error': {'message': str(e),
                                   'status': 401}}), 401
     except Exception as e:
-        return jsonify({'error': {'message': 'An error occurred while creating the project.',
+        return jsonify({'error': {'message': f'An error occurred while creating the project.{e}',
                                   'status': 500}}), 500
 
 
