@@ -18,6 +18,7 @@ githubName: ""
 gitToken: ""
 githubRepository: ""
 dockerToken: ""
+projectId: ""
 
 serviceAccount:
   # Specifies whether a service account should be created

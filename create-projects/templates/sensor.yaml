@@ -88,8 +88,8 @@ spec:
                       args:
                         - |
                           curl -X POST -H "Content-Type: application/json" \
-                          -d '{"app_name": "{{ .Values.apptemplateName }}", "status": "build-success"}' \
-                          https://webhook.site/66c9e4e9-24b0-47f2-bf5b-af193ce5558c
+                          -d '{"projectId": "{{ .Values.projectId }}", "app_name": "{{ .Values.apptemplateName }}", "status": "build-success"}' \
+                          https://backend.pitapat.ne.kr/project/build/event
                   - name: failure-webhook
                     container:
                       image: curlimages/curl:latest
@@ -97,6 +97,6 @@ spec:
                       args:
                         - |
                           curl -X POST -H "Content-Type: application/json" \
-                          -d '{"app_name": "{{ .Values.apptemplateName }}", "status": "build-failed"}' \
-                          https://webhook.site/66c9e4e9-24b0-47f2-bf5b-af193ce5558c
+                          -d '{"projectId": "{{ .Values.projectId }}", "app_name": "{{ .Values.apptemplateName }}", "status": "build-failed"}' \
+                          https://backend.pitapat.ne.kr/project/build/event
         name: ci-workflow-trigger
