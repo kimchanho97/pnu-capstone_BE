@@ -60,7 +60,7 @@ ingress:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: letsencrypt-tls
+    - secretName: letsencrypt
       hosts:
         - your.pitapat.ne.kr
 
