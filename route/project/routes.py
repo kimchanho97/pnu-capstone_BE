@@ -237,7 +237,7 @@ def handleArgoBuildEvent():
 
         project = Project.query.filter_by(id=projectId).first()
         user = User.query.filter_by(id=project.user_id).first()
-        token = Token.query.filter_by(user_id=user.id).first().access_token
+        token = Token.query.filter_by(user_id=user.id).first()
 
         commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token.access_token)
 
