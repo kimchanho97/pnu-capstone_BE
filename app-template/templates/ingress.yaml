@@ -31,7 +31,7 @@ spec:
   tls:
     {{- range .Values.ingress.tls }}
     - hosts:
-        - {{ $fullName }}.pitapat.ne.kr
+        - {{ .Values.subdomainName }}.pitapat.ne.kr
       secretName: {{ .secretName }}
     {{- end }}
   {{- end }}

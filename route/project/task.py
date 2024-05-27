@@ -18,9 +18,10 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     
     if not release_name or not github_repository or not github_name:
         raise CreatingProjectHelmError("release_name, github_repository, github_name are required")
-    app_release_name = release_name
+    subdomain = subdomain if subdomain else release_name
+    app_release_name = subdomain
     app_chart_name = "app-template"
-    ci_release_name = release_name + "-ci"
+    ci_release_name = subdomain + "-ci"
     ci_chart_name = "create-projects"
     docker_token = os.environ.get("DOCKER_TOKEN")
     ci_values = {
@@ -37,7 +38,6 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
         ci_values[f"env[{idx}].name"] = key
         ci_values[f"env[{idx}].value"] = value
 
-    subdomain = subdomain if subdomain else release_name
     app_values = {
         "fullnameOverride": app_release_name,
         "githubName": github_name,
@@ -84,12 +84,12 @@ def triggerArgoWorkflow(ci_domain, imageTag):
         raise ArgoWorkflowError(f"Request error occurred: {err}")
 
 
-def deployWithHelm(release_name, image_tag, target_port):
+def deployWithHelm(subdomain, image_tag, target_port):
     try:
         helm_chart_path = 'app-template'
         helm_upgrade_command = [
-            'helm', 'upgrade', '-n', 'default', release_name, helm_chart_path, '--reuse-values',
-            '--set', f'image.tag={image_tag}', '--set', f'image.repository={release_name}', '--set', f'image.targetPort={target_port}'
+            'helm', 'upgrade', '-n', 'default', subdomain, helm_chart_path, '--reuse-values',
+            '--set', f'image.tag={image_tag}', '--set', f'image.repository={subdomain}', '--set', f'image.targetPort={target_port}'
         ]
 
         result = subprocess.run(helm_upgrade_command, capture_output=True, text=True)

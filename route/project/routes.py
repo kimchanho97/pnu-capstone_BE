@@ -144,7 +144,7 @@ def deployProject():
                                       'status': 4001}}), 400
 
         # 배포 요청
-        deployWithHelm(release_name=project.name, image_tag=build.image_tag, target_port=project.port)
+        deployWithHelm(subdomain=project.subdomain, image_tag=build.image_tag, target_port=project.port)
 
         # 프로젝트 상태를 배포 중으로 변경
         project.status = 3
