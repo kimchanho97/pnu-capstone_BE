@@ -77,7 +77,7 @@ def triggerArgoWorkflow(ci_domain, imageTag):
     }
     data = {"after": imageTag}
     try:
-        response = requests.post(ci_domain, headers=headers, json=data)
+        response = requests.post("https://"+ci_domain, headers=headers, json=data)
         response.raise_for_status()  # 상태 코드가 4xx, 5xx일 경우 예외를 발생시킴
         return response
     except requests.exceptions.HTTPError as http_err:
