@@ -27,7 +27,7 @@ spec:
               value: {{ .value | quote }}
             {{- end }}
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - containerPort: {{ .Values.image.targetPort }}
       imagePullSecrets:
         - name: regcred
   strategy:

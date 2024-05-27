@@ -7,7 +7,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 
-def createProjectWithHelm(release_name, envs, subdomain, github_name, github_repository, git_token, commit_sha, project_id):
+def createProjectWithHelm(release_name, envs, subdomain, github_name, github_repository, git_token, commit_sha, project_id, target_port):
     # release_name: 프로젝트 이름
     # envs: 환경 변수 {"REACT_APP_API_URL":"http://localhost:5000"}
     # subdomain: 서브도메인
@@ -40,8 +40,6 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
     subdomain = subdomain if subdomain else release_name
     app_values = {
         "fullnameOverride": app_release_name,
-        "image.tag": commit_sha[:7],
-        "image.repository": app_release_name,
         "githubName": github_name,
         "subdomainName": subdomain,
         "dockerToken": docker_token
@@ -86,12 +84,12 @@ def triggerArgoWorkflow(ci_domain, imageTag):
         raise ArgoWorkflowError(f"Request error occurred: {err}")
 
 
-def deployWithHelm(release_name, image_tag):
+def deployWithHelm(release_name, image_tag, target_port):
     try:
-        helm_chart_path = './app-template'
+        helm_chart_path = 'app-template'
         helm_upgrade_command = [
-            'helm', 'upgrade', release_name, helm_chart_path, '--reuse-values',
-            '--set', f'image.tag={image_tag}'
+            'helm', 'upgrade', '-n', 'default', release_name, helm_chart_path, '--reuse-values',
+            '--set', f'image.tag={image_tag}', '--set', f'image.repository={release_name}', '--set', f'image.targetPort={target_port}'
         ]
 
         result = subprocess.run(helm_upgrade_command, capture_output=True, text=True)

@@ -144,7 +144,7 @@ def deployProject():
                                       'status': 4001}}), 400
 
         # 배포 요청
-        deployWithHelm(release_name=project.name, image_tag=build.image_tag)
+        deployWithHelm(release_name=project.name, image_tag=build.image_tag, target_port=project.port)
 
         # 프로젝트 상태를 배포 중으로 변경
         project.status = 3
@@ -184,6 +184,7 @@ def createProject():
         githubRepo = requestData['name']
 
         commitMsg, sha = getCurrentCommitMessage(name, userId, token)
+        port = int(requestData['port']) if requestData['port'] else None
 
         # 프로젝트를 먼저 DB에 생성하여 ID를 받아옴
         newProject = Project(
@@ -208,7 +209,8 @@ def createProject():
                                                           github_repository=githubRepo,
                                                           git_token=token,
                                                           commit_sha=sha,
-                                                          project_id=newProject.id)
+                                                          project_id=newProject.id,
+                                                          target_port=port)
         except CreatingProjectHelmError as e:
             db.session.rollback()
             return jsonify({'error': {'message': str(e),
