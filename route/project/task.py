@@ -1,7 +1,11 @@
 import requests, subprocess
-from flask import jsonify
+from flask import jsonify, request
+import json
 import os
 from .error import CreatingProjectHelmError, ArgoWorkflowError, DeployingProjectHelmError
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+
 
 def createProjectWithHelm(release_name, envs, subdomain, github_name, github_repository, git_token, commit_sha, project_id):
     # release_name: 프로젝트 이름
@@ -96,3 +100,32 @@ def deployWithHelm(release_name, image_tag):
 
     except Exception as e:
         raise DeployingProjectHelmError(f"Error occurred: {e}")
+
+def addDnsRecord(subdomain):
+    credentials_info = json.loads(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_info,
+        scopes=['https://www.googleapis.com/auth/cloud-platform']
+    )
+    PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
+    MANAGED_ZONE = 'pitapat'
+    dns_service = build('dns', 'v1', credentials=credentials)
+    ip_address = '59.28.89.39'
+    change_body = {
+        "additions": [
+            {
+                "name": f"{subdomain}.",
+                "type": "A",
+                "ttl": 300,
+                "rrdatas": [ip_address]
+            }
+        ]
+    }
+
+    request = dns_service.changes().create(
+        project=PROJECT_ID,
+        managedZone=MANAGED_ZONE,
+        body=change_body
+    )
+    response = request.execute()
+    return response

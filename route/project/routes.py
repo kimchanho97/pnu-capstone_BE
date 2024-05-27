@@ -4,7 +4,7 @@ from .utils import createNewProjectAndLogThenSave, getUserIdFromToken, fetchProj
 from .error import AuthorizationError
 from ..models import Project, Build, Deploy, User, Token
 from .. import db
-from .task import triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, CreatingProjectHelmError
+from .task import addDnsRecord, triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, CreatingProjectHelmError
 from .constant import successResponse
 from .error import ArgoWorkflowError, DeployingProjectHelmError
 
@@ -215,6 +215,8 @@ def createProject():
                                       'status': 500}}), 500
 
         # Helm 요청이 성공한 경우, URL 업데이트 및 로그 생성 후 커밋
+        addDnsRecord(webhookUrl)
+        addDnsRecord(domainUrl)
         createNewProjectAndLogThenSave(requestData, newProject, webhookUrl, domainUrl)
         return make_response(jsonify({'message': 'Project created successfully!'}), 201)
 
