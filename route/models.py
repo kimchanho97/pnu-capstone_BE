@@ -1,6 +1,7 @@
+import pytz
+
 from . import db
 from datetime import datetime
-import pytz
 
 def getSeoulTime():
     return datetime.now(pytz.timezone('Asia/Seoul'))

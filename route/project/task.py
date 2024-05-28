@@ -1,24 +1,13 @@
 import requests, subprocess
-from flask import jsonify, request
 import json
 import os
-from .error import CreatingProjectHelmError, ArgoWorkflowError, DeployingProjectHelmError
+
+from route.project.error import CreatingProjectHelmError, ArgoWorkflowError, DeployingProjectHelmError
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 
-def createProjectWithHelm(release_name, envs, subdomain, github_name, github_repository, git_token, commit_sha, project_id, target_port):
-    # release_name: 프로젝트 이름
-    # envs: 환경 변수 {"REACT_APP_API_URL":"http://localhost:5000"}
-    # subdomain: 서브도메인
-    # github_name: login
-    # github_repository: repository name
-    # git_token: github token
-    # commit_sha: commit sha[:7]
-    
-    if not release_name or not github_repository or not github_name:
-        raise CreatingProjectHelmError("release_name, github_repository, github_name are required")
-    subdomain = subdomain if subdomain else release_name
+def createProjectWithHelm(envs, subdomain, github_name, github_repository, git_token, project_id):
     app_release_name = subdomain
     app_chart_name = "app-template"
     ci_release_name = subdomain + "-ci"
@@ -44,28 +33,31 @@ def createProjectWithHelm(release_name, envs, subdomain, github_name, github_rep
         "subdomainName": subdomain,
         "dockerToken": docker_token
     }
+    try:
+        ci_command = [
+            'helm', 'install', '-n', 'default', ci_release_name, ci_chart_name
+        ]
+        for key, value in ci_values.items():
+            ci_command.extend(['--set', f"{key}={value}"])
 
-    ci_command = [
-        'helm', 'install', '-n','default',ci_release_name, ci_chart_name
-    ]
-    for key, value in ci_values.items():
-        ci_command.extend(['--set', f"{key}={value}"])
+        ci_result = subprocess.run(ci_command, capture_output=True, text=True)
+        ci_result.check_returncode()
 
-    ci_result = subprocess.run(ci_command, capture_output=True, text=True)
-    if ci_result.returncode != 0:
-        raise CreatingProjectHelmError(ci_result.stderr)
+        app_command = [
+            'helm', 'install', '-n','default', app_release_name, app_chart_name
+        ]
+        for key, value in app_values.items():
+            app_command.extend(['--set', f"{key}={value}"])
 
-    app_command = [
-        'helm', 'install', '-n','default', app_release_name, app_chart_name
-    ]
-    for key, value in app_values.items():
-        app_command.extend(['--set', f"{key}={value}"])
+        app_result = subprocess.run(app_command, capture_output=True, text=True)
+        app_result.check_returncode()
 
-    app_result = subprocess.run(app_command, capture_output=True, text=True)
-    if app_result.returncode != 0:
-        raise CreatingProjectHelmError(app_result.stderr)
+        return f"{ci_release_name}.webhook.pitapat.ne.kr", f"{subdomain}.pitapat.ne.kr"
 
-    return f"{ci_release_name}.webhook.pitapat.ne.kr", f"{subdomain}.pitapat.ne.kr"
+    except subprocess.CalledProcessError as e:
+        raise CreatingProjectHelmError(f"Helm command failed: {e.stderr}")
+    except Exception as e:
+        raise CreatingProjectHelmError(f"Unexpected error: {e}")
 
 
 def triggerArgoWorkflow(ci_domain, imageTag):
@@ -97,7 +89,8 @@ def deployWithHelm(subdomain, image_tag, target_port):
             raise DeployingProjectHelmError(result.stderr)
 
     except Exception as e:
-        raise DeployingProjectHelmError(f"Error occurred: {e}")
+        raise DeployingProjectHelmError(f"Unexpected error: {e}")
+
 
 def addDnsRecord(subdomain):
     credentials_info = json.loads(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
