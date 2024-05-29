@@ -67,15 +67,15 @@ def createProject():
     assignUrlsToProject(newProject, webhookUrl, domainUrl)
     createLogAndSecretsForProject(requestData, newProject)
     db.session.commit()
-    return make_response(jsonify(successResponse), 200)
+    return make_response(jsonify({"projectId": newProject.id}), 200)
 
 
 @projectBlueprint.route('/build', methods=['POST'])
 def buildProject():
     token = extractToken(request)
-    validateTokenAndGetUser(token)
+    user = validateTokenAndGetUser(token)
     project = getProjectById(request.json['id'])
-    commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token)
+    commitMsg, sha = getCurrentCommitMessage(project.name, user, token)
     checkBuildExists(project.id, sha)
     workflowResponse = triggerArgoWorkflow(ci_domain=project.webhook_url,
                                            imageTag=sha[:7])
@@ -106,7 +106,7 @@ def handleArgoBuildEvent():
     project = Project.query.filter_by(id=data['projectId']).first()
     user = User.query.filter_by(id=project.user_id).first()
     token = Token.query.filter_by(user_id=user.id).first()
-    commitMsg, sha = getCurrentCommitMessage(project.name, project.user_id, token.access_token)
+    commitMsg, sha = getCurrentCommitMessage(project.name, user, token.access_token)
 
     status = data['status']
     if status == 'build-success':
