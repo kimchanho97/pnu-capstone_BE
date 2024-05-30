@@ -5,7 +5,8 @@ from .utils import createLogAndSecretsForProject, validateTokenAndGetUser, fetch
     handleWorkflowResponse, getBuildById, checkCurrentDeployId, getRolloutStatus
 from ..models import Project, User, Token
 from .. import db
-from .task import addDnsRecord, triggerArgoWorkflow, deployWithHelm, createProjectWithHelm
+from .task import addDnsRecord, deleteWithHelm, triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, \
+    deleteDnsRecord
 from route.response import successResponse
 
 projectBlueprint = Blueprint('project', __name__)
@@ -30,10 +31,10 @@ def getProjectDetail(projectId):
 def deleteProject(projectId):
     token = extractToken(request)
     validateTokenAndGetUser(token)
+    project = getProjectById(projectId)
+    deleteWithHelm(project.subdomain)
+    deleteDnsRecord(project.subdomain)
     deleteProjectById(projectId)
-
-    # 추가적으로 인프라에서 삭제하는 작업이 필요함
-
     return make_response(jsonify(successResponse), 200)
 
 

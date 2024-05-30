@@ -1,6 +1,6 @@
 from flask import jsonify
 from sqlalchemy.exc import SQLAlchemyError
-from route.project.error import AuthorizationError, ProjectNotFoundError, CreatingProjectHelmError, ArgoWorkflowError, \
+from route.project.error import AuthorizationError, DeletingProjectHelmError, ProjectNotFoundError, CreatingProjectHelmError, ArgoWorkflowError, \
     DeployingProjectHelmError, BuildExistsError, BuildNotFoundError, DeployExistsError
 from .routes import projectBlueprint
 from .. import db
@@ -52,6 +52,13 @@ def handleDeployExistsError(error):
 def handleDeployingProjectHelmError(error):
     return jsonify({'error': {'message': str(error),
                               'status': 500}}), 500
+
+@projectBlueprint.errorhandler(DeletingProjectHelmError)
+def handleDeletingProjectHelmError(error):
+    return jsonify({'error': {'message': str(error),
+                              'status': 500}}), 500
+
+
 
 
 @projectBlueprint.errorhandler(SQLAlchemyError)

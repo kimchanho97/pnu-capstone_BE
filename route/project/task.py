@@ -2,7 +2,7 @@ import requests, subprocess
 import json
 import os
 
-from route.project.error import CreatingProjectHelmError, ArgoWorkflowError, DeployingProjectHelmError
+from route.project.error import CreatingProjectHelmError, ArgoWorkflowError, DeletingProjectHelmError, DeployingProjectHelmError
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -113,6 +113,49 @@ def addDnsRecord(subdomain):
         ]
     }
 
+    request = dns_service.changes().create(
+        project=PROJECT_ID,
+        managedZone=MANAGED_ZONE,
+        body=change_body
+    )
+    response = request.execute()
+    return response
+
+def deleteWithHelm(subdomain):
+    try:
+        helm_upgrade_command = [
+            'helm', 'delete', '-n', 'default', subdomain
+        ]
+        result = subprocess.run(helm_upgrade_command, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise DeployingProjectHelmError(result.stderr)
+
+    except Exception as e:
+        raise DeletingProjectHelmError(f"Unexpected error: {e}")
+
+def deleteDnsRecord(subdomain):
+    credentials_info = json.loads(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_info,
+        scopes=['https://www.googleapis.com/auth/cloud-platform']
+    )
+    
+    PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
+    MANAGED_ZONE = 'pitapat'
+    dns_service = build('dns', 'v1', credentials=credentials)
+    
+    ip_address = '59.28.89.39'
+    change_body = {
+        "deletions": [
+            {
+                "name": f"{subdomain}.",
+                "type": "A",
+                "ttl": 300,
+                "rrdatas": [ip_address]
+            }
+        ]
+    }
+    
     request = dns_service.changes().create(
         project=PROJECT_ID,
         managedZone=MANAGED_ZONE,

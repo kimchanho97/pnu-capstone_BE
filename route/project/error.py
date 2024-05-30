@@ -21,3 +21,6 @@ class DeployExistsError(Exception):
 
 class DeployingProjectHelmError(Exception):
     pass
+
+class DeletingProjectHelmError(Exception):
+    pass
