@@ -123,17 +123,23 @@ def addDnsRecord(subdomain):
 
 def deleteWithHelm(subdomain):
     try:
-        helm_upgrade_command = [
+        helm_delete_command = [
             'helm', 'delete', '-n', 'default', subdomain
         ]
-        result = subprocess.run(helm_upgrade_command, capture_output=True, text=True)
+        result = subprocess.run(helm_delete_command, capture_output=True, text=True)
         if result.returncode != 0:
-            raise DeployingProjectHelmError(result.stderr)
+            raise DeletingProjectHelmError(result.stderr)
+        helm_ci_delete_command = [
+            'helm', 'delete', '-n', 'default', subdomain+'-ci'
+        ]
+        result = subprocess.run(helm_ci_delete_command, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise DeletingProjectHelmError(result.stderr)
 
     except Exception as e:
         raise DeletingProjectHelmError(f"Unexpected error: {e}")
 
-def deleteDnsRecord(subdomain):
+def deleteDnsRecord(domain):
     credentials_info = json.loads(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON"))
     credentials = service_account.Credentials.from_service_account_info(
         credentials_info,
@@ -148,7 +154,7 @@ def deleteDnsRecord(subdomain):
     change_body = {
         "deletions": [
             {
-                "name": f"{subdomain}.",
+                "name": f"{domain}.pitapat.ne.kr.",
                 "type": "A",
                 "ttl": 300,
                 "rrdatas": [ip_address]

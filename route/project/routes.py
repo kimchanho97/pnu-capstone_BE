@@ -34,6 +34,7 @@ def deleteProject(projectId):
     project = getProjectById(projectId)
     deleteWithHelm(project.subdomain)
     deleteDnsRecord(project.subdomain)
+    deleteDnsRecord(project.subdomain+'-ci.webhook')
     deleteProjectById(projectId)
     return make_response(jsonify(successResponse), 200)
 
