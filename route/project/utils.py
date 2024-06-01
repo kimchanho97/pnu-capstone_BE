@@ -41,7 +41,8 @@ def fetchProjects(userId):
                 'status': project.status,
                 'framework': project.framework,
                 'currentBuildId': project.current_build_id,
-                'currentDeployId': project.current_deploy_id
+                'currentDeployId': project.current_deploy_id,
+                'description': project.description
             })
         return projectList
     except SQLAlchemyError as e:
@@ -50,7 +51,8 @@ def fetchProjects(userId):
 
 def getProjectDetailById(projectId):
     try:
-        data = {'builds': [], 'deploys': [], 'secrets': [], 'domainUrl': '', 'webhookUrl': '', 'subdomain': ''}
+        data = {'builds': [], 'deploys': [], 'secrets': [], 'domainUrl': '', 'webhookUrl': '', 'subdomain': '',
+                'detailedDescription': ''}
         project = Project.query.filter_by(id=projectId).first()
         if project is None:
             raise ProjectNotFoundError('Project not found')
@@ -77,6 +79,7 @@ def getProjectDetailById(projectId):
         data['domainUrl'] = project.domain_url
         data['webhookUrl'] = project.webhook_url
         data['subdomain'] = project.subdomain
+        data['detailedDescription'] = project.detailed_description
 
         secrets = Secret.query.filter_by(project_id=projectId).all()
         for secret in secrets:

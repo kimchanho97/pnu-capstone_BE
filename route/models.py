@@ -15,6 +15,7 @@ class User(db.Model):
 
     tokens = db.relationship('Token', backref='User', uselist=False, lazy=True)
     projects = db.relationship('Project', backref='User', lazy=True)
+    favorites = db.relationship('Favorite', backref='User', lazy=True)
 
     def __repr__(self):
         return f'User: id={self.id}, login={self.login}, nickname={self.nickname}'
@@ -44,10 +45,13 @@ class Project(db.Model):
     domain_url = db.Column(db.String(255), nullable=True)
     webhook_url = db.Column(db.String(255), nullable=True)
     subdomain = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.String(100), nullable=False, default="")
+    detailed_description = db.Column(db.Text, nullable=False, default="")
 
     logs = db.relationship('Log', backref='project', uselist=False, lazy=True, cascade='all, delete-orphan')
     builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan', foreign_keys='Build.project_id')
     secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
+    favorites = db.relationship('Favorite', backref='project', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'Project: id={self.id}, name={self.name}, status={self.status}'
@@ -92,4 +96,12 @@ class Secret(db.Model):
     def __repr__(self):
         return f'Secret: project_id={self.project_id}, key={self.key}, value={self.value}'
 
+
+class Favorite(db.Model):
+    __tablename__ = 'Favorite'
+    user_id = db.Column(db.Integer, db.ForeignKey('User.id'), primary_key=True, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('Project.id'), primary_key=True, nullable=False)
+
+    def __repr__(self):
+        return f'Favorite(user_id={self.user_id}, project_id={self.project_id})'
 

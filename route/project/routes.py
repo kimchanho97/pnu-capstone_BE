@@ -3,7 +3,7 @@ from .utils import createLogAndSecretsForProject, validateTokenAndGetUser, fetch
     getCurrentCommitMessage, getProjectDetailById, createNewBuild, sendSseMessage, createNewDeploy, \
     extractToken, createNewProject, convertSecretsToDict, assignUrlsToProject, getProjectById, checkBuildExists, \
     handleWorkflowResponse, getBuildById, checkCurrentDeployId, getRolloutStatus
-from ..models import Project, User, Token
+from ..models import Project, User, Token, Favorite
 from .. import db
 from .task import addDnsRecord, deleteWithHelm, triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, \
     deleteDnsRecord
@@ -19,7 +19,7 @@ def getProjects():
     return make_response(jsonify(responseData), 200)
 
 
-@projectBlueprint.route('/<projectId>', methods=['GET'])
+@projectBlueprint.route('/<int:projectId>', methods=['GET'])
 def getProjectDetail(projectId):
     token = extractToken(request)
     validateTokenAndGetUser(token)
@@ -27,7 +27,7 @@ def getProjectDetail(projectId):
     return make_response(jsonify(responseData), 200)
 
 
-@projectBlueprint.route('/<projectId>', methods=['DELETE'])
+@projectBlueprint.route('/<int:projectId>', methods=['DELETE'])
 def deleteProject(projectId):
     token = extractToken(request)
     validateTokenAndGetUser(token)
@@ -154,4 +154,65 @@ def checkDeployStatus():
                                               'currentBuildId': project.current_build_id,
                                               'currentDeployId': project.current_deploy_id})
 
+    return make_response(jsonify(successResponse), 200)
+
+
+@projectBlueprint.route('/<int:projectId>/description', methods=['PUT'])
+def updateProjectDescription(projectId):
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+    project = getProjectById(projectId)
+    project.description = request.json['description']
+    db.session.commit()
+    return make_response(jsonify(successResponse), 200)
+
+
+@projectBlueprint.route('/<int:projectId>/detailed_description', methods=['PUT'])
+def updateProjectDetailedDescription(projectId):
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+    project = getProjectById(projectId)
+    project.detailed_description = request.json['detailedDescription']
+    db.session.commit()
+    return make_response(jsonify(successResponse), 200)
+
+
+@projectBlueprint.route('/favorite/<int:userId>', methods=['GET'])
+def getFavoriteProjects(userId):
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+    favorites = Favorite.query.filter_by(user_id=userId).all()
+    projectIds = [favorite.project_id for favorite in favorites]
+    return make_response(jsonify({'favorites': projectIds}), 200)
+
+
+@projectBlueprint.route('/favorite', methods=['POST'])
+def addFavoriteProject():
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+
+    favorite = Favorite.query.filter_by(user_id=request.json['userId'],
+                                        project_id=request.json['projectId']).first()
+    if favorite is not None:
+        return jsonify({'error': {'message': "이미 즐겨찾기한 프로젝트입니다.",
+                                  'status': 4000}}), 400
+
+    newFavorite = Favorite(user_id=request.json['userId'], project_id=request.json['projectId'])
+    db.session.add(newFavorite)
+    db.session.commit()
+    return make_response(jsonify(successResponse), 200)
+
+
+@projectBlueprint.route('/favorite', methods=['DELETE'])
+def deleteFavoriteProject():
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+    favorite = Favorite.query.filter_by(user_id=request.json['userId'],
+                                        project_id=request.json['projectId']).first()
+    if favorite is None:
+        return jsonify({'error': {'message': "즐겨찾기한 프로젝트가 아닙니다.",
+                                  'status': 4000}}), 400
+
+    db.session.delete(favorite)
+    db.session.commit()
     return make_response(jsonify(successResponse), 200)
