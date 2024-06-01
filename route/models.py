@@ -48,10 +48,11 @@ class Project(db.Model):
     description = db.Column(db.String(100), nullable=False, default="")
     detailed_description = db.Column(db.Text, nullable=False, default="")
 
-    logs = db.relationship('Log', backref='project', uselist=False, lazy=True, cascade='all, delete-orphan')
     builds = db.relationship('Build', backref='Project', lazy=True, cascade='all, delete-orphan', foreign_keys='Build.project_id')
+    deploys = db.relationship('Deploy', backref='Project', lazy=True, cascade='all, delete-orphan', foreign_keys='Deploy.project_id')
     secrets = db.relationship('Secret', backref='Project', lazy=True, cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='project', lazy=True, cascade='all, delete-orphan')
+    logs = db.relationship('Log', backref='project', uselist=False, lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'Project: id={self.id}, name={self.name}, status={self.status}'
@@ -72,8 +73,6 @@ class Build(db.Model):
     image_name = db.Column(db.String(255), nullable=False)
     image_tag = db.Column(db.String(255), nullable=False)
 
-    deploys = db.relationship('Deploy', backref='Build', lazy=True, cascade='all, delete-orphan')
-
     def __repr__(self):
         return f'Build: id={self.id}, image_name={self.image_name}, image_tag={self.image_tag}, build_date={self.build_date}'
 
@@ -81,6 +80,7 @@ class Deploy(db.Model):
     __tablename__ = 'Deploy'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     build_id = db.Column(db.Integer, db.ForeignKey('Build.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('Project.id'), nullable=False)
     deploy_date = db.Column(db.DateTime, nullable=False, default=getSeoulTime)
 
     def __repr__(self):
