@@ -66,15 +66,16 @@ def getProjectDetailById(projectId):
                 'imageTag': build.image_tag
             })
 
-            deploy = Deploy.query.filter_by(build_id=build.id).first()
-            if deploy is not None:
-                data['deploys'].append({
-                    'id': deploy.id,
-                    'buildId': deploy.build_id,
-                    'deployDate': deploy.deploy_date,
-                    'commitMsg': build.commit_msg,
-                    'imageTag': build.image_tag
-                })
+        deploys = Deploy.query.filter_by(project_id=projectId).all()
+        for deploy in deploys:
+            build = Build.query.filter_by(id=deploy.build_id).first()
+            data['deploys'].append({
+                'id': deploy.id,
+                'buildId': deploy.build_id,
+                'deployDate': deploy.deploy_date,
+                'commitMsg': build.commit_msg,
+                'imageTag': build.image_tag
+            })
 
         data['domainUrl'] = project.domain_url
         data['webhookUrl'] = project.webhook_url
