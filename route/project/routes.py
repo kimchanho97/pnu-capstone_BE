@@ -183,7 +183,7 @@ def getFavoriteProjects(userId):
     validateTokenAndGetUser(token)
     favorites = Favorite.query.filter_by(user_id=userId).all()
     projectIds = [favorite.project_id for favorite in favorites]
-    return make_response(jsonify({'favorites': projectIds}), 200)
+    return make_response(jsonify(projectIds), 200)
 
 
 @projectBlueprint.route('/favorite', methods=['POST'])
@@ -207,8 +207,10 @@ def addFavoriteProject():
 def deleteFavoriteProject():
     token = extractToken(request)
     validateTokenAndGetUser(token)
-    favorite = Favorite.query.filter_by(user_id=request.json['userId'],
-                                        project_id=request.json['projectId']).first()
+    userId = request.args.get('userId')
+    projectId = request.args.get('projectId')
+    favorite = Favorite.query.filter_by(user_id=userId, project_id=projectId).first()
+
     if favorite is None:
         return jsonify({'error': {'message': "즐겨찾기한 프로젝트가 아닙니다.",
                                   'status': 4000}}), 400
