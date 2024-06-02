@@ -103,6 +103,10 @@ def deleteProjectById(projectId):
         project.current_build_id = None
         project.current_deploy_id = None
 
+        # 프로젝트 삭제 전에 빌드와 배포 삭제
+        Build.query.filter_by(project_id=projectId).delete()
+        Deploy.query.filter_by(project_id=projectId).delete()
+
         db.session.delete(project)
         db.session.commit()
     except SQLAlchemyError as e:
