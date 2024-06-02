@@ -169,3 +169,34 @@ def deleteDnsRecord(domain):
     )
     response = request.execute()
     return response
+
+def fetchBuildLogs(subdomain):
+    url = f"https://argo-server.argo.svc.cluster.local:2746/api/v1/workflows/{subdomain}-ci2"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # HTTP 에러가 발생했는지 확인
+        build_data = response.json()
+        build_log = ""
+
+        if 'items' in build_data and len(build_data['items']) > 0:
+            # 최근 빌드 식별자 추출
+            recent_build = build_data['items'][0]
+            recent_build_id = recent_build['metadata']['name']
+
+            # 빌드 로그 추출
+            build_logs = recent_build.get('spec', {}).get('templates', [])
+            for log in build_logs:
+                build_log += f"Template Name: {log['name']}\n"
+                if 'container' in log:
+                    build_log += f"Container Image: {log['container'].get('image', 'N/A')}\n"
+                    build_log += f"Container Args: {log['container'].get('args', 'N/A')}\n"
+                if 'inputs' in log:
+                    build_log += f"Inputs: {log['inputs']}\n"
+                if 'outputs' in log:
+                    build_log += f"Outputs: {log['outputs']}\n"
+
+        return build_log
+    except requests.exceptions.HTTPError as http_err:
+        raise Exception(f"HTTP error occurred: {http_err}")
+    except Exception as err:
+        raise Exception(f"An error occurred: {err}")

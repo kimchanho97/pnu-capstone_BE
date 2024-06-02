@@ -2,11 +2,11 @@ from flask import Blueprint, request, jsonify, make_response
 from .utils import createLogAndSecretsForProject, validateTokenAndGetUser, fetchProjects, deleteProjectById, \
     getCurrentCommitMessage, getProjectDetailById, createNewBuild, sendSseMessage, createNewDeploy, \
     extractToken, createNewProject, convertSecretsToDict, assignUrlsToProject, getProjectById, checkBuildExists, \
-    handleWorkflowResponse, getBuildById, checkCurrentDeployId, getRolloutStatus
+    handleWorkflowResponse, getBuildById, checkCurrentDeployId, getRolloutStatus, createOrUpdateBuildLog, fetchLogs
 from ..models import Project, User, Token, Favorite
 from .. import db
 from .task import addDnsRecord, deleteWithHelm, triggerArgoWorkflow, deployWithHelm, createProjectWithHelm, \
-    deleteDnsRecord
+    deleteDnsRecord, fetchBuildLogs
 from route.response import successResponse
 
 projectBlueprint = Blueprint('project', __name__)
@@ -119,6 +119,8 @@ def handleArgoBuildEvent():
         project.status = 5  # 빌드 실패
 
     # 빌드 로그를 업데이트하는 작업이 필요함
+    buildLog = fetchBuildLogs(subdomain=project.subdomain)
+    createOrUpdateBuildLog(project.id, buildLog)
 
     db.session.commit()
     sendSseMessage(f"{project.user_id}", {'projectId': project.id,
@@ -218,3 +220,11 @@ def deleteFavoriteProject():
     db.session.delete(favorite)
     db.session.commit()
     return make_response(jsonify(successResponse), 200)
+
+
+@projectBlueprint.route('/<int:projectId>/logs', methods=['GET'])
+def getProjectLogs(projectId):
+    token = extractToken(request)
+    validateTokenAndGetUser(token)
+    response = fetchLogs(projectId)
+    return make_response(jsonify(response), 200)

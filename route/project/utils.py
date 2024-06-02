@@ -246,3 +246,26 @@ def createNewDeploy(buildId):
     db.session.add(newDeploy)
     db.session.flush()
     return newDeploy
+
+
+def createOrUpdateBuildLog(projectId, buildLog):
+    log = Log.query.filter_by(project_id=projectId).first()
+    if log:
+        log.build_log = buildLog
+    else:
+        newLog = Log(
+            project_id=projectId,
+            build_log=buildLog,
+            deploy_log=''
+        )
+        db.session.add(newLog)
+    db.session.commit()
+
+
+def fetchLogs(projectId):
+    data = {'buildLog': '', 'deployLog': ''}
+    log = Log.query.filter_by(project_id=projectId).first()
+    if log:
+        data['buildLog'] = log.build_log
+        data['deployLog'] = log.deploy_log
+    return data
