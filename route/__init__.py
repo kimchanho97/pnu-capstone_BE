@@ -29,9 +29,13 @@ def create_app():
     # 블루프린트와 서비스 로직 동적 로딩
     from .user.login import userBlueprint
     app.register_blueprint(userBlueprint, url_prefix='/user')
+    from route.user.errorhandler import registerUserErrorHandler
+    registerUserErrorHandler(app)
 
     from .project.routes import projectBlueprint
     app.register_blueprint(projectBlueprint, url_prefix='/project')
+    from route.project.errorhandler import registerProjectErrorHandler
+    registerProjectErrorHandler(app)
 
     # Add CORS for sse blueprint
     cors = CORS()
