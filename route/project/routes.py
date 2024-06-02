@@ -78,7 +78,7 @@ def buildProject():
     user = validateTokenAndGetUser(token)
     project = getProjectById(request.json['id'])
     commitMsg, sha = getCurrentCommitMessage(project.name, user, token)
-    checkBuildExists(project.id, sha)
+    checkBuildExists(project.id, sha[:7])
     workflowResponse = triggerArgoWorkflow(ci_domain=project.webhook_url,
                                            imageTag=sha[:7])
 
