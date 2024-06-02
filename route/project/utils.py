@@ -240,9 +240,10 @@ def getRolloutStatus(subdomain):
     return "Healthy"
 
 
-def createNewDeploy(buildId):
+def createNewDeploy(buildId, projectId):
     newDeploy = Deploy(
-        build_id=buildId
+        build_id=buildId,
+        project_id=projectId
     )
     db.session.add(newDeploy)
     db.session.flush()
