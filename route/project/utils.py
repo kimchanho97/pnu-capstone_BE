@@ -99,15 +99,9 @@ def deleteProjectById(projectId):
         if project is None:
             raise ProjectNotFoundError('Project not found')
 
-
         project.current_build_id = None
         project.current_deploy_id = None
 
-        deploys = Deploy.query.filter_by(project_id=projectId).all()
-        for deploy in deploys:
-            deploy.build_id = None
-
-        # Project 레코드 삭제
         db.session.delete(project)
         db.session.commit()
     except SQLAlchemyError as e:
@@ -245,7 +239,7 @@ def getRolloutStatus(subdomain):
     return "Healthy"
 
 
-def createNewDeploy(buildId, projectId):
+def createNewDeploy(buildId):
     newDeploy = Deploy(
         build_id=buildId,
     )
