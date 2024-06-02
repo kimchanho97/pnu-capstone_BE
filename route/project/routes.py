@@ -83,6 +83,8 @@ def buildProject():
     #                                        imageTag=sha[:7])
 
     # handleWorkflowResponse(workflowResponse, project)
+    print('"projectId":', project.id)
+    print('"status":', '"build-success"')
     project.status = 1  # 빌드 중
     db.session.commit()
     sendSseMessage(f"{project.user_id}", {'projectId': project.id, 'status': project.status})
