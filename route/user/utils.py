@@ -9,8 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 def getAccessTokenFromGithub(authCode):
     clientId = os.getenv("GITHUB_CLIENT_ID")
     clientSecret = os.getenv("GITHUB_CLIENT_SECRET")
-    redirectUri = "https://pitapat.ne.kr/callback"
-    # redirectUri = 'http://localhost:3000/callback'
+    # redirectUri = "https://pitapat.ne.kr/callback"
+    redirectUri = 'http://localhost:3000/callback'
     tokenUrl = 'https://github.com/login/oauth/access_token'
     data = {
         'client_id': clientId,

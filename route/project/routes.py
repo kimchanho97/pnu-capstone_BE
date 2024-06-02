@@ -64,8 +64,8 @@ def createProject():
                                                   git_token=token,
                                                   project_id=newProject.id)
 
-    addDnsRecord(webhookUrl)
-    addDnsRecord(domainUrl)
+    # addDnsRecord(webhookUrl)
+    # addDnsRecord(domainUrl)
     assignUrlsToProject(newProject, webhookUrl, domainUrl)
     createLogAndSecretsForProject(requestData, newProject)
     db.session.commit()
@@ -79,10 +79,12 @@ def buildProject():
     project = getProjectById(request.json['id'])
     commitMsg, sha = getCurrentCommitMessage(project.name, user, token)
     checkBuildExists(project.id, sha[:7])
-    workflowResponse = triggerArgoWorkflow(ci_domain=project.webhook_url,
-                                           imageTag=sha[:7])
+    # workflowResponse = triggerArgoWorkflow(ci_domain=project.webhook_url,
+    #                                        imageTag=sha[:7])
 
-    handleWorkflowResponse(workflowResponse, project)
+    # handleWorkflowResponse(workflowResponse, project)
+    project.status = 1  # 빌드 중
+    db.session.commit()
     sendSseMessage(f"{project.user_id}", {'projectId': project.id, 'status': project.status})
     return make_response(jsonify(successResponse), 200)
 
@@ -94,7 +96,7 @@ def deployProject():
     build = getBuildById(request.json['id'])
     project = getProjectById(build.project_id)
     checkCurrentDeployId(build.id, project.current_deploy_id)
-    deployWithHelm(subdomain=project.subdomain, image_tag=build.image_tag, target_port=project.port)
+    # deployWithHelm(subdomain=project.subdomain, image_tag=build.image_tag, target_port=project.port)
 
     project.status = 3  # 배포 중
     db.session.commit()

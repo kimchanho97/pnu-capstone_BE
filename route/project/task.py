@@ -12,6 +12,7 @@ def createProjectWithHelm(envs, subdomain, github_name, github_repository, git_t
     app_chart_name = "app-template"
     ci_release_name = subdomain + "-ci"
     ci_chart_name = "create-projects"
+    return f"{ci_release_name}.webhook.pitapat.ne.kr", f"{subdomain}.pitapat.ne.kr"
     docker_token = os.environ.get("DOCKER_TOKEN")
     ci_values = {
         "fullnameOverride": ci_release_name,
