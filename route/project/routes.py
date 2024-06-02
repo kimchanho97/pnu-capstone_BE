@@ -139,7 +139,7 @@ def checkDeployStatus():
 
     if status in ['Healthy', 'Degraded', 'InvalidSpec']:
         if status == 'Healthy':
-            newDeploy = createNewDeploy(build.id, project.id)
+            newDeploy = createNewDeploy(build.id)
             project.status = 4  # 배포 완료
             project.current_deploy_id = newDeploy.id
             project.current_build_id = build.id

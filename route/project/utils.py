@@ -65,17 +65,16 @@ def getProjectDetailById(projectId):
                 'commitMsg': build.commit_msg,
                 'imageTag': build.image_tag
             })
-
-        deploys = Deploy.query.filter_by(project_id=projectId).all()
-        for deploy in deploys:
-            build = Build.query.filter_by(id=deploy.build_id).first()
-            data['deploys'].append({
-                'id': deploy.id,
-                'buildId': deploy.build_id,
-                'deployDate': deploy.deploy_date,
-                'commitMsg': build.commit_msg,
-                'imageTag': build.image_tag
-            })
+            deploys = Deploy.query.filter_by(build_id=build.id).all()
+            for deploy in deploys:
+                data['deploys'].append({
+                    'id': deploy.id,
+                    'buildId': deploy.build_id,
+                    'deployDate': deploy.deploy_date,
+                    'commitMsg': build.commit_msg,
+                    'imageTag': build.image_tag
+                })
+        data['deploys'].sort(key=lambda x: x['id'])
 
         data['domainUrl'] = project.domain_url
         data['webhookUrl'] = project.webhook_url
@@ -249,7 +248,6 @@ def getRolloutStatus(subdomain):
 def createNewDeploy(buildId, projectId):
     newDeploy = Deploy(
         build_id=buildId,
-        project_id=projectId
     )
     db.session.add(newDeploy)
     db.session.flush()
