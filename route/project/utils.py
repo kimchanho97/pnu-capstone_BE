@@ -100,19 +100,17 @@ def deleteProjectById(projectId):
         if project is None:
             raise ProjectNotFoundError('Project not found')
 
-            # Project 테이블의 current_build_id와 current_deploy_id를 None으로 설정
-            project.current_build_id = None
-            project.current_deploy_id = None
 
-            # Deploy 테이블에서 project_id를 참조하는 레코드 삭제
-            Deploy.query.filter_by(project_id=projectId).delete()
+        project.current_build_id = None
+        project.current_deploy_id = None
 
-            # Build 테이블에서 project_id를 참조하는 레코드 삭제
-            Build.query.filter_by(project_id=projectId).delete()
+        deploys = Deploy.query.filter_by(project_id=projectId).all()
+        for deploy in deploys:
+            deploy.build_id = None
 
-            # Project 레코드 삭제
-            db.session.delete(project)
-            db.session.commit()
+        # Project 레코드 삭제
+        db.session.delete(project)
+        db.session.commit()
     except SQLAlchemyError as e:
         raise e
 
