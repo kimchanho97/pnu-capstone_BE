@@ -154,7 +154,7 @@ def checkDeployStatus():
                                               'currentBuildId': project.current_build_id,
                                               'currentDeployId': project.current_deploy_id})
 
-    return make_response(jsonify(successResponse), 200)
+    return make_response(jsonify({'status': project.status}), 200)
 
 
 @projectBlueprint.route('/<int:projectId>/description', methods=['PUT'])
