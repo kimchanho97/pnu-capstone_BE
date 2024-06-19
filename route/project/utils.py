@@ -231,12 +231,11 @@ def createNewBuild(projectId, commitMsg, imageName, imageTag):
 
 def getRolloutStatus(subdomain):
     return "Healthy"
-    response = requests.get(
-        f'http://argo-rollouts-dashboard.argo-rollouts.svc.cluster.local:3100/api/v1/rollouts/{subdomain}/{subdomain}/info',
-        headers={'Content-Type': 'application/json'})
-    responseData = response.json()
-    status = responseData['status']
-    return "Healthy"
+    # response = requests.get(
+    #     f'http://argo-rollouts-dashboard.argo-rollouts.svc.cluster.local:3100/api/v1/rollouts/{subdomain}/{subdomain}/info',
+    #     headers={'Content-Type': 'application/json'})
+    # responseData = response.json()
+    # status = responseData['status']
 
 
 def createNewDeploy(buildId):

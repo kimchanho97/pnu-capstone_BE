@@ -119,8 +119,8 @@ def handleArgoBuildEvent():
         project.status = 5  # 빌드 실패
 
     # 빌드 로그를 업데이트하는 작업이 필요함
-    buildLog = fetchBuildLogs(subdomain=project.subdomain)
-    createOrUpdateBuildLog(project.id, buildLog)
+    # buildLog = fetchBuildLogs(subdomain=project.subdomain)
+    # createOrUpdateBuildLog(project.id, buildLog)
 
     db.session.commit()
     sendSseMessage(f"{project.user_id}", {'projectId': project.id,
