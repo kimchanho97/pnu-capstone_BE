@@ -51,12 +51,12 @@ def registerProjectErrorHandler(app):
                                   'status': 500}}), 500
 
     @app.errorhandler(SQLAlchemyError)
-    def handleDatabaseError():
+    def handleDatabaseError(error):
         db.session.rollback()
-        return jsonify({'error': {'message': 'Database Error',
+        return jsonify({'error': {'message': str(error),
                                   'status': 500}}), 500
 
     @app.errorhandler(Exception)
-    def handleServerError():
-        return jsonify({'error': {'message': 'Server Error',
+    def handleServerError(error):
+        return jsonify({'error': {'message': str(error),
                                   'status': 500}}), 500
