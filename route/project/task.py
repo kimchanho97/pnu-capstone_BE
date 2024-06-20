@@ -101,7 +101,7 @@ def addDnsRecord(subdomain):
     PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
     MANAGED_ZONE = 'pitapat'
     dns_service = build('dns', 'v1', credentials=credentials)
-    ip_address = '59.28.89.39'
+    ip_address = '220.84.206.115'
     change_body = {
         "additions": [
             {
@@ -150,7 +150,7 @@ def deleteDnsRecord(domain):
     MANAGED_ZONE = 'pitapat'
     dns_service = build('dns', 'v1', credentials=credentials)
     
-    ip_address = '59.28.89.39'
+    ip_address = '220.84.206.115'
     change_body = {
         "deletions": [
             {
