@@ -73,7 +73,7 @@
 
 |전체 구성도|
 |:---:|
-|<img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/5539bfba-c6af-4059-a225-4b6b46885594">|
+|<img width="600" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/5539bfba-c6af-4059-a225-4b6b46885594">|
 
 - **쿠버네티스를 통한 자동화 및 리소스 관리 최적화**: 쿠버네티스를 활용하여 컨테이너의 자동 배포, 확장 및 관리가 이루어집니다.
 - **통합된 개발 플랫폼 제공**: 웹 기반 인터페이스를 통해 사용자는 프로젝트 생성, 빌드, 배포 및 롤백을 진행할 수 있으며, Argo를 활용한 워크플로우 관리와 지속적인 배포(CD)가 가능합니다.
@@ -86,7 +86,7 @@
 
 |CI / CD 파이프라인|
 |:---:|
-|<img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/8819fc9d-ba12-4946-b2f1-9270bbad6204">|
+|<img width="600" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/8819fc9d-ba12-4946-b2f1-9270bbad6204">|
 
 - **자동화 및 안정성 강화된 CI/CD**: Argo Workflows와 GitHub Container Registry를 사용하여 컨테이너 빌드를 자동화하고, Argo Rollouts와 Helm을 활용한 블루-그린 배포로 고도의 안정성을 확보하며 신속한 롤백을 가능하게 한다.
 
@@ -95,7 +95,7 @@
 
 |클라우드 버스팅|
 |:---:|
-|<img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/31614502-86c4-42bb-b3c1-4a310457cad1">|
+|<img width="600" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/31614502-86c4-42bb-b3c1-4a310457cad1">|
 
 - **온-프레미스와 클라우드의 결합**: 이 플랫폼은 온-프레미스에 구축된 쿠버네티스 클러스터와 클라우드 환경을 연계하여 안정성과 확장성을 제공합니다. 온-프레미스 환경은 데이터 제어와 보안을, 클라우드 환경은 빠른 리소스 확장을 담당합니다.
 - **클라우드 버스팅**: 필요시 GCP의 워커 노드를 자동으로 생성하여 리소스를 동적으로 확장합니다. Prometheus로 모니터링한 CPU 사용량이 임계값을 초과할 경우 Flask 서버를 통해 GCP의 인스턴스 수를 조절하여 확장성을 실현합니다.
