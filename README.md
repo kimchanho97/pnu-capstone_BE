@@ -114,16 +114,16 @@
 
 ### 화면 소개
 
-|**이름**|**이미지**|
-|:---:|:---:|
-| **메인 페이지** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/7b9494a2-68b9-401b-81c9-0a32fca9bd36">|
-| **프로젝트 페이지** |<img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/a497f0ec-3ecf-4d30-a6e9-e161a92fb30e">|
-| **프로젝트 상세 화면** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/aa143c61-fb40-4785-8dd3-77b73f2f74af"> |
-| **배포 내역 화면** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/96d36540-020e-4084-9ad2-dac773dd25de"> | 
-| **연결 정보 화면** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/0885572f-f333-44fe-864b-ea948e7b497b"> | 
-| **환경 설정 화면** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/30eea47b-0272-4a70-bb42-767cc21352cf"> | 
-| **프로젝트 생성 화면1** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/a7a3a21f-2ae4-41c6-ae77-da2756931c84"> | 
-| **프로젝트 생성 화면2** | <img width="500" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/556b63dc-0386-4546-992a-bb95b4cb5acb"> | 
+|**이름**|                                                                  **이미지**                                                                   |
+|:---:|:------------------------------------------------------------------------------------------------------------------------------------------:|
+| **메인 페이지** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/7b9494a2-68b9-401b-81c9-0a32fca9bd36"> |
+| **프로젝트 페이지** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/a497f0ec-3ecf-4d30-a6e9-e161a92fb30e"> |
+| **프로젝트 상세 화면** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/aa143c61-fb40-4785-8dd3-77b73f2f74af"> |
+| **배포 내역 화면** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/96d36540-020e-4084-9ad2-dac773dd25de"> | 
+| **연결 정보 화면** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/0885572f-f333-44fe-864b-ea948e7b497b"> | 
+| **환경 설정 화면** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/30eea47b-0272-4a70-bb42-767cc21352cf"> | 
+| **프로젝트 생성 화면1** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/a7a3a21f-2ae4-41c6-ae77-da2756931c84"> | 
+| **프로젝트 생성 화면2** | <img width="700" alt="image" src="https://github.com/kimchanho97/capstone-frontend/assets/104095041/556b63dc-0386-4546-992a-bb95b4cb5acb"> | 
 
 <br>
 
